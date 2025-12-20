@@ -9,6 +9,59 @@ $current_user = getCurrentUser($db);
 
 // Get current page
 $current_page = basename($_SERVER['PHP_SELF'], '.php');
+
+// Role-based scope whitelist
+$current_role = $current_user['role'] ?? ($current_user['user_role'] ?? '');
+$uri = $_SERVER['REQUEST_URI'] ?? '';
+
+// Common always-allowed paths for limited roles
+$common_allowed = [
+    '/modules/dashboard/index.php',
+    '/modules/auth/logout.php'
+];
+
+if ($current_role === 'waiter') {
+    $allowed_paths = array_merge($common_allowed, [
+        '/modules/orders/pos.php'
+    ]);
+    $allowed = false;
+    foreach ($allowed_paths as $p) {
+        if (strpos($uri, $p) !== false) { $allowed = true; break; }
+    }
+    if (!$allowed) {
+        header('Location: ' . SITE_URL . '/modules/dashboard/index.php');
+        exit();
+    }
+}
+
+if ($current_role === 'chef') {
+    $allowed_paths = array_merge($common_allowed, [
+        '/modules/orders/kitchen_display.php'
+    ]);
+    $allowed = false;
+    foreach ($allowed_paths as $p) {
+        if (strpos($uri, $p) !== false) { $allowed = true; break; }
+    }
+    if (!$allowed) {
+        header('Location: ' . SITE_URL . '/modules/dashboard/index.php');
+        exit();
+    }
+}
+
+if ($current_role === 'cashier') {
+    $allowed_paths = array_merge($common_allowed, [
+        '/modules/orders/pos.php',
+        '/modules/payments/payment_history.php'
+    ]);
+    $allowed = false;
+    foreach ($allowed_paths as $p) {
+        if (strpos($uri, $p) !== false) { $allowed = true; break; }
+    }
+    if (!$allowed) {
+        header('Location: ' . SITE_URL . '/modules/dashboard/index.php');
+        exit();
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="vi">

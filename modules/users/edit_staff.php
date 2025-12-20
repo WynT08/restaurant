@@ -6,6 +6,13 @@ require_once '../../config/database.php';
 $database = new Database();
 $db = $database->getConnection();
 
+// Ensure users.role enum supports extended roles
+try {
+    $db->exec("ALTER TABLE users MODIFY role ENUM('admin','manager','waiter','chef','cashier','staff') NOT NULL DEFAULT 'staff'");
+} catch (Exception $e) {
+    // ignore if fails
+}
+
 requirePermission('admin');
 
 $user_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
@@ -59,19 +66,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $password_clause = ', password = :password';
         }
 
-        $query = "UPDATE users SET
-                    full_name = :full_name,
-                    email = :email,
-                    phone = :phone,
-                    role = :role,
-                    avatar = :avatar
-                    $password_clause
-                  WHERE user_id = :id";
+                // Normalize role to supported set
+                $role = $_POST['role'];
+                $allowed_roles = ['admin','manager','waiter','chef','cashier','staff'];
+                if (!in_array($role, $allowed_roles, true)) {
+                        $role = 'staff';
+                }
+
+                $query = "UPDATE users SET
+                                        full_name = :full_name,
+                                        email = :email,
+                                        phone = :phone,
+                                        role = :role,
+                                        avatar = :avatar
+                                        $password_clause
+                                    WHERE user_id = :id";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':full_name', $_POST['full_name']);
         $stmt->bindParam(':email', $_POST['email']);
         $stmt->bindParam(':phone', $_POST['phone']);
-        $stmt->bindParam(':role', $_POST['role']);
+                $stmt->bindParam(':role', $role);
         $stmt->bindParam(':avatar', $avatar);
         $stmt->bindParam(':id', $user_id, PDO::PARAM_INT);
         if (!empty($password_clause)) {

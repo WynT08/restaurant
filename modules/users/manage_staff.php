@@ -49,21 +49,14 @@ if ($role_filter != 'all') {
 $stmt->execute();
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Count by role
-$role_counts = [
-    'admin' => 0,
-    'manager' => 0,
-    'waiter' => 0,
-    'chef' => 0,
-    'cashier' => 0,
-    'staff' => 0
-];
+// Count by role (extended roles)
+$all_roles = ['admin','manager','waiter','chef','cashier','staff'];
+$role_counts = array_fill_keys($all_roles, 0);
 
 foreach ($users as $user) {
-    $role_key = $user['role'] ?? ($user['user_role'] ?? 'staff');
-    if (isset($role_counts[$role_key])) {
-        $role_counts[$role_key]++;
-    }
+    $raw_role = $user['role'] ?? ($user['user_role'] ?? 'staff');
+    $role_key = in_array($raw_role, $all_roles, true) ? $raw_role : 'staff';
+    $role_counts[$role_key]++;
 }
 ?>
 
@@ -203,7 +196,8 @@ foreach ($users as $user) {
                                     'cashier' => ['info', 'Thu ngân'],
                                     'staff' => ['secondary', 'Staff']
                                 ];
-                                $role_key = $user['user_role'] ?? 'staff';
+                                // Prefer schema column 'role', fallback legacy 'user_role'
+                                $role_key = $user['role'] ?? ($user['user_role'] ?? 'staff');
                                 $badge = $role_badges[$role_key] ?? ['secondary', ucfirst($role_key)];
                                 ?>
                                 <span class="badge bg-<?php echo $badge[0]; ?>">

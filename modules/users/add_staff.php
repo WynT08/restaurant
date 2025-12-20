@@ -1,7 +1,18 @@
 <?php
 $page_title = 'Thêm nhân viên';
-include '../../includes/header. php';
+require_once '../../config/config.php';
+require_once '../../config/database.php';
+
+$database = new Database();
+$db = $database->getConnection();
 requirePermission('admin');
+
+// Ensure users.role enum supports extended roles
+try {
+    $db->exec("ALTER TABLE users MODIFY role ENUM('admin','manager','waiter','chef','cashier','staff') NOT NULL DEFAULT 'staff'");
+} catch (Exception $e) {
+    // ignore if fails
+}
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -10,9 +21,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (empty($_POST['username']) || empty($_POST['password']) || empty($_POST['full_name'])) {
             throw new Exception('Vui lòng điền đầy đủ thông tin');
         }
+        if (($_POST['password'] ?? '') !== ($_POST['confirm_password'] ?? '')) {
+            throw new Exception('Mật khẩu xác nhận không khớp');
+        }
+        
+        // Normalize role to supported set
+        $role = $_POST['role'];
+        $allowed_roles = ['admin','manager','waiter','chef','cashier','staff'];
+        if (!in_array($role, $allowed_roles, true)) {
+            $role = 'staff';
+        }
+        
+        // Email fallback to avoid unique constraint issues when left blank; make it unique
+        $email = trim($_POST['email'] ?? '');
+        if ($email === '') {
+            $email = $_POST['username'] . '+' . uniqid() . '@example.local';
+        }
         
         // Check username exists
-        $query = "SELECT COUNT(*) FROM users WHERE username = : username";
+        $query = "SELECT COUNT(*) FROM users WHERE username = :username";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':username', $_POST['username']);
         $stmt->execute();
@@ -41,19 +68,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Insert user
         $query = "INSERT INTO users (
             username, password, full_name, email, phone, 
-            role, avatar, status
+            role, avatar, is_active
         ) VALUES (
             :username, :password, :full_name, :email, :phone,
-            :role, :avatar, 'active'
+            :role, :avatar, 1
         )";
         
         $stmt = $db->prepare($query);
         $stmt->bindParam(':username', $_POST['username']);
         $stmt->bindParam(':password', $hashed_password);
         $stmt->bindParam(':full_name', $_POST['full_name']);
-        $stmt->bindParam(':email', $_POST['email']);
+        $stmt->bindParam(':email', $email);
         $stmt->bindParam(':phone', $_POST['phone']);
-        $stmt->bindParam(':role', $_POST['role']);
+        $stmt->bindParam(':role', $role);
         $stmt->bindParam(':avatar', $avatar);
         
         if ($stmt->execute()) {
@@ -67,6 +94,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         setAlert($e->getMessage(), 'danger');
     }
 }
+// Include header after processing to avoid header already sent
+include '../../includes/header.php';
 ?>
 
 <div class="container-fluid">
