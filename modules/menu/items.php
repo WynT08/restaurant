@@ -1,7 +1,10 @@
 <?php
 $page_title = 'Quản lý món ăn';
 include '../../includes/header.php';
-requirePermission('manager');
+$isChef = ($_SESSION['user_role'] ?? '') === 'chef';
+if (!$isChef) {
+    requirePermission('manager');
+}
 
 // Get category filter
 $category_filter = isset($_GET['category']) ? $_GET['category'] : 'all';
@@ -31,6 +34,7 @@ $categories = $db->query("SELECT * FROM categories ORDER BY display_order")->fet
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3">Quản lý món ăn</h1>
+        <?php if (!$isChef): ?>
         <div class="d-flex gap-2">
             <a href="categories.php" class="btn btn-outline-primary">
                 <i class="fas fa-folder"></i> Danh mục
@@ -39,6 +43,7 @@ $categories = $db->query("SELECT * FROM categories ORDER BY display_order")->fet
                 <i class="fas fa-plus"></i> Thêm món mới
             </a>
         </div>
+        <?php endif; ?>
     </div>
     
     <!-- Filter -->
@@ -80,6 +85,7 @@ $categories = $db->query("SELECT * FROM categories ORDER BY display_order")->fet
                         <div class="item-badge unavailable">Hết hàng</div>
                     <?php endif; ?>
                     
+                    <?php if (!$isChef): ?>
                     <div class="item-actions">
                         <a href="edit_item.php?id=<?php echo $item['item_id']; ?>" class="btn btn-sm btn-info">
                             <i class="fas fa-edit"></i>
@@ -88,6 +94,7 @@ $categories = $db->query("SELECT * FROM categories ORDER BY display_order")->fet
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
+                    <?php endif; ?>
                 </div>
                 
                 <div class="card-body">
@@ -109,7 +116,7 @@ $categories = $db->query("SELECT * FROM categories ORDER BY display_order")->fet
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" 
                                    <?php echo $item['is_available'] ? 'checked' : ''; ?>
-                                   onchange="toggleAvailability(<?php echo $item['item_id']; ?>, this.checked)">
+                                   <?php if ($isChef): ?>disabled<?php else: ?>onchange="toggleAvailability(<?php echo $item['item_id']; ?>, this.checked)"<?php endif; ?>>
                         </div>
                     </div>
                 </div>

@@ -9,6 +9,11 @@ if (!isLoggedIn()) {
     exit();
 }
 
+if (!hasPermission('manager')) {
+    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    exit();
+}
+
 $database = new Database();
 $db = $database->getConnection();
 

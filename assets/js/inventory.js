@@ -36,8 +36,12 @@ function showLowStockAlert(items) {
 }
 
 function initializeAutocomplete() {
-    // Ingredient search with autocomplete
-    $('#ingredient-search').autocomplete({
+    // Ingredient search with autocomplete (only if plugin is available and input exists)
+    if (!$.fn.autocomplete) return;
+    const $input = $('#ingredient-search');
+    if (!$input.length) return;
+
+    $input.autocomplete({
         source: function(request, response) {
             $.ajax({
                 url: 'ajax_search_ingredients.php',

@@ -36,7 +36,9 @@ if ($current_role === 'waiter') {
 
 if ($current_role === 'chef') {
     $allowed_paths = array_merge($common_allowed, [
-        '/modules/orders/kitchen_display.php'
+        '/modules/orders/kitchen_display.php',
+        '/modules/menu/items.php',
+        '/modules/inventory/recipes.php'
     ]);
     $allowed = false;
     foreach ($allowed_paths as $p) {
@@ -51,7 +53,9 @@ if ($current_role === 'chef') {
 if ($current_role === 'cashier') {
     $allowed_paths = array_merge($common_allowed, [
         '/modules/orders/pos.php',
-        '/modules/payments/payment_history.php'
+        '/modules/payments/payment_history.php',
+        '/modules/reservations/',
+        '/modules/tables/'
     ]);
     $allowed = false;
     foreach ($allowed_paths as $p) {

@@ -1,7 +1,10 @@
 <?php
 $page_title = 'Công thức món ăn';
 include '../../includes/header.php';
-requirePermission('manager');
+$isChef = ($_SESSION['user_role'] ?? '') === 'chef';
+if (!$isChef) {
+    requirePermission('manager');
+}
 
 // Get menu items with recipes
 $query = "SELECT mi.*, c.category_name,
@@ -13,19 +16,39 @@ $items = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
 
 // Get all ingredients for dropdown
 $ingredients = $db->query("SELECT * FROM ingredients ORDER BY ingredient_name")->fetchAll(PDO::FETCH_ASSOC);
+
+// Get categories for filtering
+$categories = $db->query("SELECT category_id, category_name FROM categories ORDER BY display_order")
+                 ->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3">Công thức món ăn</h1>
-        <a href="ingredients.php" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Quay lại kho
-        </a>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-6 col-lg-4">
+                    <label class="form-label mb-1">Lọc theo danh mục</label>
+                    <select id="recipe-category-filter" class="form-select">
+                        <option value="all">Tất cả danh mục</option>
+                        <?php foreach ($categories as $cat): ?>
+                        <option value="<?php echo $cat['category_id']; ?>"><?php echo htmlspecialchars($cat['category_name']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+        </div>
     </div>
     
     <div class="row">
-        <? php foreach ($items as $item): ?>
-        <div class="col-lg-6 mb-4">
+        <?php foreach ($items as $item): ?>
+           <div class="col-lg-6 mb-4 recipe-card" 
+               data-name="<?php echo htmlspecialchars($item['item_name']); ?>" 
+               data-category="<?php echo htmlspecialchars($item['category_name']); ?>"
+               data-category-id="<?php echo $item['category_id']; ?>">
             <div class="card">
                 <div class="card-header bg-light">
                     <div class="d-flex justify-content-between align-items-center">
@@ -33,14 +56,16 @@ $ingredients = $db->query("SELECT * FROM ingredients ORDER BY ingredient_name")-
                             <h5 class="mb-0"><?php echo htmlspecialchars($item['item_name']); ?></h5>
                             <small class="text-muted"><?php echo htmlspecialchars($item['category_name']); ?></small>
                         </div>
+                        <?php if (!$isChef): ?>
                         <button class="btn btn-sm btn-primary" 
                                 onclick="addIngredient(<?php echo $item['item_id']; ?>)">
                             <i class="fas fa-plus"></i> Thêm nguyên liệu
                         </button>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <div class="card-body">
-                    <? php
+                    <?php
                     // Get recipe for this item
                     $query = "SELECT r.*, i.ingredient_name, i.unit 
                               FROM recipes r
@@ -52,19 +77,20 @@ $ingredients = $db->query("SELECT * FROM ingredients ORDER BY ingredient_name")-
                     $recipes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     ?>
                     
-                    <? php if (count($recipes) > 0): ?>
+                    <?php if (count($recipes) > 0): ?>
                     <div class="table-responsive">
                         <table class="table table-sm table-hover mb-0">
                             <thead>
                                 <tr>
                                     <th>Nguyên liệu</th>
                                     <th>Số lượng</th>
+                                    <?php if (!$isChef): ?>
                                     <th width="80">Hành động</th>
+                                    <?php endif; ?>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php 
-                                $total_cost = 0;
                                 foreach ($recipes as $recipe): 
                                     // Calculate ingredient cost
                                     $query = "SELECT unit_price FROM ingredients WHERE ingredient_id = :id";
@@ -73,7 +99,6 @@ $ingredients = $db->query("SELECT * FROM ingredients ORDER BY ingredient_name")-
                                     $stmt->execute();
                                     $ing = $stmt->fetch(PDO:: FETCH_ASSOC);
                                     $cost = $recipe['quantity'] * ($ing['unit_price'] ?? 0);
-                                    $total_cost += $cost;
                                 ?>
                                 <tr>
                                     <td><?php echo htmlspecialchars($recipe['ingredient_name']); ?></td>
@@ -83,28 +108,17 @@ $ingredients = $db->query("SELECT * FROM ingredients ORDER BY ingredient_name")-
                                         <br>
                                         <small class="text-muted"><?php echo formatMoney($cost); ?></small>
                                     </td>
+                                    <?php if (!$isChef): ?>
                                     <td>
                                         <button class="btn btn-sm btn-danger" 
                                                 onclick="deleteRecipe(<?php echo $recipe['recipe_id']; ?>)">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </td>
+                                    <?php endif; ?>
                                 </tr>
-                                <? php endforeach; ?>
+                                <?php endforeach; ?>
                             </tbody>
-                            <tfoot>
-                                <tr class="table-info">
-                                    <td><strong>Giá vốn ước tính:</strong></td>
-                                    <td colspan="2">
-                                        <strong class="text-danger"><?php echo formatMoney($total_cost); ?></strong>
-                                        <br>
-                                        <small class="text-muted">
-                                            Giá bán: <?php echo formatMoney($item['price']); ?>
-                                            | Lợi nhuận: <?php echo formatMoney($item['price'] - $total_cost); ?>
-                                        </small>
-                                    </td>
-                                </tr>
-                            </tfoot>
                         </table>
                     </div>
                     <?php else: ?>
@@ -115,7 +129,7 @@ $ingredients = $db->query("SELECT * FROM ingredients ORDER BY ingredient_name")-
                 </div>
             </div>
         </div>
-        <? php endforeach; ?>
+        <?php endforeach; ?>
     </div>
 </div>
 
@@ -178,7 +192,7 @@ $('#ingredient-select').on('change', function() {
 $('#add-ingredient-form').on('submit', function(e) {
     e.preventDefault();
     
-    $. post('ajax_add_recipe.php', $(this).serialize(), function(response) {
+    $.post('ajax_add_recipe.php', $(this).serialize(), function(response) {
         if (response.success) {
             location.reload();
         } else {
@@ -196,6 +210,24 @@ function deleteRecipe(recipeId) {
         }, 'json');
     }
 }
+
+// Filter recipes by category (similar to menu page)
+$(function() {
+    function applyCategoryFilter() {
+        const selected = $('#recipe-category-filter').val();
+        const selectedText = ($('#recipe-category-filter option:selected').text() || '').toLowerCase().trim();
+
+        $('.recipe-card').each(function() {
+            const catId = String($(this).data('category-id') || '');
+            const catName = ($(this).data('category') || '').toLowerCase();
+            const match = selected === 'all' || catId === selected || catName === selectedText;
+            $(this).toggle(match);
+        });
+    }
+
+    $('#recipe-category-filter').on('change', applyCategoryFilter);
+    applyCategoryFilter();
+});
 </script>
 
 <?php include '../../includes/footer.php'; ?>

@@ -1,3 +1,7 @@
+<?php
+$current_role = $_SESSION['user_role'] ?? '';
+$isChef = $current_role === 'chef';
+?>
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <h3><i class="fas fa-utensils"></i> <?php echo SITE_TITLE; ?></h3>
@@ -11,25 +15,44 @@
             </a>
         </li>
         
-        <?php if (hasPermission('staff')): ?>
-        <li class="<?php echo in_array($current_page, ['pos', 'order_list', 'order_details']) ? 'active' : ''; ?>">
-            <a href="<?php echo SITE_URL; ?>/modules/orders/pos.php">
-                <i class="fas fa-cash-register"></i>
-                <span>POS - Bán hàng</span>
+        <?php if (hasPermission('staff') && !$isChef): ?>
+                <li class="<?php echo in_array($current_page, ['pos', 'order_list', 'order_details']) ? 'active' : ''; ?>">
+                    <a href="<?php echo SITE_URL; ?>/modules/orders/pos.php">
+                        <i class="fas fa-cash-register"></i>
+                        <span>POS - Bán hàng</span>
+                    </a>
+                </li>
+                <?php if (($current_role ?? '') !== 'waiter'): ?>
+                <li class="<?php echo in_array($current_page, ['list', 'create', 'edit', 'calendar']) && strpos($_SERVER['REQUEST_URI'], 'reservations') !== false ? 'active' : ''; ?>">
+                    <a href="<?php echo SITE_URL; ?>/modules/reservations/list.php">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Đặt bàn</span>
+                    </a>
+                </li>
+        
+                <li class="<?php echo strpos($_SERVER['REQUEST_URI'], 'tables') !== false ? 'active' : ''; ?>">
+                    <a href="<?php echo SITE_URL; ?>/modules/tables/manage_tables.php">
+                        <i class="fas fa-table"></i>
+                        <span>Quản lý bàn</span>
+                    </a>
+                </li>
+                <?php endif; ?>
+        <?php endif; ?>
+
+        <?php if ($isChef): ?>
+        <li class="menu-header">Bếp</li>
+
+        <li class="<?php echo strpos($_SERVER['REQUEST_URI'], 'menu/items') !== false ? 'active' : ''; ?>">
+            <a href="<?php echo SITE_URL; ?>/modules/menu/items.php">
+                <i class="fas fa-book-open"></i>
+                <span>Thực đơn</span>
             </a>
         </li>
-        
-        <li class="<?php echo in_array($current_page, ['list', 'create', 'edit', 'calendar']) && strpos($_SERVER['REQUEST_URI'], 'reservations') !== false ? 'active' : ''; ?>">
-            <a href="<?php echo SITE_URL; ?>/modules/reservations/list.php">
-                <i class="fas fa-calendar-check"></i>
-                <span>Đặt bàn</span>
-            </a>
-        </li>
-        
-        <li class="<?php echo strpos($_SERVER['REQUEST_URI'], 'tables') !== false ? 'active' : ''; ?>">
-            <a href="<?php echo SITE_URL; ?>/modules/tables/manage_tables.php">
-                <i class="fas fa-table"></i>
-                <span>Quản lý bàn</span>
+
+        <li class="<?php echo strpos($_SERVER['REQUEST_URI'], 'inventory/recipes') !== false ? 'active' : ''; ?>">
+            <a href="<?php echo SITE_URL; ?>/modules/inventory/recipes.php">
+                <i class="fas fa-flask"></i>
+                <span>Công thức món</span>
             </a>
         </li>
         <?php endif; ?>
@@ -50,6 +73,15 @@
                 <span>Kho hàng</span>
             </a>
         </li>
+
+                <?php if (!$isChef): ?>
+                <li class="<?php echo strpos($_SERVER['REQUEST_URI'], 'inventory/recipes') !== false ? 'active' : ''; ?>">
+                    <a href="<?php echo SITE_URL; ?>/modules/inventory/recipes.php">
+                        <i class="fas fa-flask"></i>
+                        <span>Công thức món</span>
+                    </a>
+                </li>
+                <?php endif; ?>
         
         <li class="<?php echo strpos($_SERVER['REQUEST_URI'], 'expenses') !== false ? 'active' : ''; ?>">
             <a href="<?php echo SITE_URL; ?>/modules/expenses/expense_list.php">

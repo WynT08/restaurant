@@ -2,6 +2,12 @@
 $page_title = 'Dashboard';
 include '../../includes/header.php';
 
+$currentRole = $_SESSION['user_role'] ?? ($current_user['role'] ?? '');
+$canSetPreparing = $currentRole === 'chef';
+$canSetServed = $currentRole === 'waiter';
+$canSetCompleted = in_array($currentRole, ['waiter', 'manager', 'admin', 'cashier']);
+$canCancel = in_array($currentRole, ['manager', 'admin', 'cashier']);
+
 // Get statistics
 $stats = [];
 
@@ -40,8 +46,9 @@ $stats['available_tables'] = $stmt->fetch(PDO:: FETCH_ASSOC)['available_tables']
 
 // Pending reservations
 $query = "SELECT COUNT(*) as pending_reservations 
-          FROM reservations 
-          WHERE status = 'pending'";
+                    FROM reservations 
+                    WHERE status IN ('pending','confirmed')
+                        AND CONCAT(reservation_date, ' ', reservation_time) >= NOW()";
 $stmt = $db->prepare($query);
 $stmt->execute();
 $stats['pending_reservations'] = $stmt->fetch(PDO::FETCH_ASSOC)['pending_reservations'];
@@ -204,10 +211,18 @@ try {
                                     <td><?php echo formatDateTime($order['created_at']); ?></td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
+                                            <?php if ($canSetPreparing): ?>
                                             <button class="btn btn-outline-primary" onclick="updateOrderStatus(<?php echo $order['order_id']; ?>, 'preparing')">Đang làm</button>
+                                            <?php endif; ?>
+                                            <?php if ($canSetServed): ?>
                                             <button class="btn btn-outline-success" onclick="updateOrderStatus(<?php echo $order['order_id']; ?>, 'served')">Đã phục vụ</button>
+                                            <?php endif; ?>
+                                            <?php if ($canSetCompleted): ?>
                                             <button class="btn btn-outline-info" onclick="updateOrderStatus(<?php echo $order['order_id']; ?>, 'completed')">Hoàn thành</button>
+                                            <?php endif; ?>
+                                            <?php if ($canCancel): ?>
                                             <button class="btn btn-outline-secondary" onclick="updateOrderStatus(<?php echo $order['order_id']; ?>, 'cancelled')">Hủy</button>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>

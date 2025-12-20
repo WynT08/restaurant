@@ -77,10 +77,12 @@ try {
     setAlert('Bảng ingredients chưa tồn tại. Vui lòng import schema hoặc tạo bảng.', 'warning');
 }
 
-// Count low stock items using reorder_level
+// Count low stock items using reorder_level (fallback when legacy rows miss columns)
 $low_stock_count = 0;
 foreach ($ingredients as $item) {
-    if ($item['current_stock'] <= ($item['reorder_level'] ?? 0)) {
+    $current_stock = isset($item['current_stock']) ? (float) $item['current_stock'] : 0;
+    $reorder_level = isset($item['reorder_level']) ? (float) $item['reorder_level'] : 0;
+    if ($current_stock <= $reorder_level) {
         $low_stock_count++;
     }
 }
@@ -147,9 +149,11 @@ foreach ($ingredients as $item) {
                     <tbody>
                         <?php foreach ($ingredients as $index => $item): ?>
                         <?php
-                        $is_low_stock = $item['current_stock'] <= ($item['reorder_level'] ?? 0);
-                        $cost_price = $item['cost_price'] ?? 0;
-                        $total_value = $item['current_stock'] * $cost_price;
+                        $current_stock = isset($item['current_stock']) ? (float) $item['current_stock'] : 0;
+                        $reorder_level = isset($item['reorder_level']) ? (float) $item['reorder_level'] : 0;
+                        $is_low_stock = $current_stock <= $reorder_level;
+                        $cost_price = isset($item['cost_price']) ? (float) $item['cost_price'] : 0;
+                        $total_value = $current_stock * $cost_price;
                         ?>
                         <tr class="<?php echo $is_low_stock ? 'table-warning' : ''; ?>">
                             <td><?php echo $index + 1; ?></td>
@@ -158,9 +162,9 @@ foreach ($ingredients as $item) {
                             </td>
                             <td><?php echo $item['unit']; ?></td>
                             <td>
-                                <strong><?php echo number_format($item['current_stock'], 2); ?></strong>
+                                <strong><?php echo number_format($current_stock, 2); ?></strong>
                             </td>
-                            <td><?php echo number_format($item['reorder_level'] ?? 0, 2); ?></td>
+                            <td><?php echo number_format($reorder_level, 2); ?></td>
                             <td><?php echo formatMoney($cost_price); ?></td>
                             <td><strong><?php echo formatMoney($total_value); ?></strong></td>
                             <td>
@@ -218,7 +222,9 @@ foreach ($ingredients as $item) {
                                     <?php 
                                     $total_inventory = 0;
                                     foreach ($ingredients as $item) {
-                                        $total_inventory += $item['current_stock'] * ($item['cost_price'] ?? 0);
+                                        $cs = isset($item['current_stock']) ? (float) $item['current_stock'] : 0;
+                                        $cp = isset($item['cost_price']) ? (float) $item['cost_price'] : 0;
+                                        $total_inventory += $cs * $cp;
                                     }
                                     echo formatMoney($total_inventory);
                                     ?>

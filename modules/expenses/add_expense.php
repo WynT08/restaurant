@@ -2,7 +2,7 @@
 $page_title = 'Thêm chi phí';
 require_once '../../config/config.php';
 require_once '../../config/database.php';
-requirePermission('manager');
+requirePermission('admin');
 
 $database = new Database();
 $db = $database->getConnection();
