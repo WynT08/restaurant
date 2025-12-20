@@ -1,0 +1,13 @@
+/vendor/
+/vendor-*/
+/node_modules/
+/.env
+/.env.*
+/uploads/*
+!/uploads/.gitkeep
+/restaurant_database.sql
+/.idea/
+/.vscode/
+.DS_Store
+Thumbs.db
+composer.lock

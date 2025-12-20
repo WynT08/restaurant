@@ -1,0 +1,15 @@
+{
+  "name": "wynt08/restaurant-management",
+  "description": "Restaurant Management System (POS, reservations, inventory, reports)",
+  "type": "project",
+  "license": "MIT",
+  "require": {
+    "php": ">=8.0"
+  },
+  "autoload": {
+    "classmap": ["classes/"]
+  },
+  "config": {
+    "sort-packages": true
+  }
+}
