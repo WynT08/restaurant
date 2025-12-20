@@ -1,7 +1,30 @@
 <?php
 $page_title = 'Thêm chi phí';
-include '../../includes/header.php';
+require_once '../../config/config.php';
+require_once '../../config/database.php';
 requirePermission('manager');
+
+$database = new Database();
+$db = $database->getConnection();
+
+// Ensure expenses table exists for fresh installs
+try {
+    $db->exec("CREATE TABLE IF NOT EXISTS expenses (
+        expense_id INT AUTO_INCREMENT PRIMARY KEY,
+        expense_type VARCHAR(50) NOT NULL,
+        amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+        description TEXT,
+        expense_date DATE NOT NULL,
+        payment_method VARCHAR(50) DEFAULT NULL,
+        receipt_image VARCHAR(255) DEFAULT NULL,
+        recorded_by INT DEFAULT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT fk_expenses_user FOREIGN KEY (recorded_by) REFERENCES users(user_id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+} catch (Exception $e) {
+    setAlert('Không thể tạo bảng expenses: ' . $e->getMessage(), 'danger');
+}
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -26,12 +49,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             payment_method, receipt_image, recorded_by
         ) VALUES (
             :expense_type, :amount, :description, :expense_date,
-            : payment_method, :receipt_image, :recorded_by
+            :payment_method, :receipt_image, :recorded_by
         )";
         
         $stmt = $db->prepare($query);
         $stmt->bindParam(':expense_type', $_POST['expense_type']);
-        $stmt->bindParam(': amount', $_POST['amount']);
+        $stmt->bindParam(':amount', $_POST['amount']);
         $stmt->bindParam(':description', $_POST['description']);
         $stmt->bindParam(':expense_date', $_POST['expense_date']);
         $stmt->bindParam(':payment_method', $_POST['payment_method']);
@@ -48,6 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         setAlert('Có lỗi xảy ra: ' . $e->getMessage(), 'danger');
     }
 }
+// Include header after pre-processing
+include '../../includes/header.php';
 ?>
 
 <div class="container-fluid">
@@ -120,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save"></i> Lưu
                             </button>
-                            <a href="expense_list. php" class="btn btn-secondary">Hủy</a>
+                            <a href="expense_list.php" class="btn btn-secondary">Hủy</a>
                         </div>
                     </form>
                 </div>

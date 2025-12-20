@@ -1,16 +1,67 @@
 <?php
 $page_title = 'Nhập kho';
-include '../../includes/header.php';
+// Load config early to avoid HTML output before redirects
+require_once '../../config/config.php';
+require_once '../../config/database.php';
+
+// DB connection for pre-output work
+$database = new Database();
+$db = $database->getConnection();
+
 requirePermission('manager');
 
-// Get ingredient if ID provided
+// Ensure required inventory tables exist so stock-in doesn't fail on fresh installs
+function ensureInventoryTables(PDO $db) {
+    // Ingredients table definition matches modules/inventory/ingredients.php
+    $db->exec("CREATE TABLE IF NOT EXISTS ingredients (
+        ingredient_id INT AUTO_INCREMENT PRIMARY KEY,
+        ingredient_name VARCHAR(100) NOT NULL,
+        unit VARCHAR(20) NOT NULL,
+        current_stock DECIMAL(10,2) NOT NULL DEFAULT 0,
+        reorder_level DECIMAL(10,2) DEFAULT 0,
+        cost_price DECIMAL(10,2) DEFAULT 0,
+        supplier_name VARCHAR(100) DEFAULT NULL,
+        supplier_phone VARCHAR(50) DEFAULT NULL,
+        last_restocked DATETIME DEFAULT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+    // Transaction log for stock movements, tied to ingredients
+    $db->exec("CREATE TABLE IF NOT EXISTS inventory_transactions (
+        transaction_id INT AUTO_INCREMENT PRIMARY KEY,
+        ingredient_id INT NOT NULL,
+        transaction_type ENUM('in','out','adjust') NOT NULL,
+        quantity DECIMAL(10,2) NOT NULL DEFAULT 0,
+        unit_price DECIMAL(10,2) DEFAULT 0,
+        total_cost DECIMAL(10,2) DEFAULT 0,
+        reference_type VARCHAR(50) DEFAULT NULL,
+        notes TEXT DEFAULT NULL,
+        performed_by INT DEFAULT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_inventory_transactions_ingredient FOREIGN KEY (ingredient_id) REFERENCES ingredients(ingredient_id) ON DELETE CASCADE,
+        CONSTRAINT fk_inventory_transactions_user FOREIGN KEY (performed_by) REFERENCES users(user_id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+}
+
+try {
+    ensureInventoryTables($db);
+} catch (Exception $e) {
+    setAlert('Không thể khởi tạo bảng kho: ' . $e->getMessage(), 'danger');
+}
+
+// Get ingredient if ID provided (guard missing table)
 $ingredient = null;
 if (isset($_GET['id'])) {
-    $query = "SELECT * FROM ingredients WHERE ingredient_id = :id";
-    $stmt = $db->prepare($query);
-    $stmt->bindParam(':id', $_GET['id']);
-    $stmt->execute();
-    $ingredient = $stmt->fetch(PDO::FETCH_ASSOC);
+    try {
+        $query = "SELECT * FROM ingredients WHERE ingredient_id = :id";
+        $stmt = $db->prepare($query);
+        $stmt->bindParam(':id', $_GET['id']);
+        $stmt->execute();
+        $ingredient = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        $ingredient = null;
+    }
 }
 
 // Handle form submission
@@ -34,26 +85,64 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bindParam(':unit_price', $unit_price);
         $stmt->bindParam(':ingredient_id', $ingredient_id);
         $stmt->execute();
-        
-        // Log transaction
-        $query = "INSERT INTO inventory_transactions (
-            ingredient_id, transaction_type, quantity, unit_price, 
-            total_cost, reference_type, notes, performed_by
-        ) VALUES (
-            :ingredient_id, 'in', :quantity, :unit_price,
-            :total_cost, 'purchase', :notes, :user_id
-        )";
-        $stmt = $db->prepare($query);
-        $stmt->bindParam(':ingredient_id', $ingredient_id);
-        $stmt->bindParam(':quantity', $quantity);
-        $stmt->bindParam(':unit_price', $unit_price);
-        $stmt->bindParam(':total_cost', $total_cost);
-        $stmt->bindParam(':notes', $_POST['notes']);
-        $stmt->bindParam(':user_id', $_SESSION['user_id']);
-        $stmt->execute();
-        
+
+        // Best-effort transaction log; adapt to legacy/new schemas
+        $logOk = true;
+        $logMsg = '';
+        try {
+            $columns = $db->query("SHOW COLUMNS FROM inventory_transactions")->fetchAll(PDO::FETCH_COLUMN);
+
+            if (in_array('ingredient_id', $columns)) {
+                // Newer schema using ingredients
+                $query = "INSERT INTO inventory_transactions (
+                    ingredient_id, transaction_type, quantity, unit_price, 
+                    total_cost, reference_type, notes, performed_by
+                ) VALUES (
+                    :ingredient_id, 'in', :quantity, :unit_price,
+                    :total_cost, 'purchase', :notes, :user_id
+                )";
+                $stmt = $db->prepare($query);
+                $stmt->bindParam(':ingredient_id', $ingredient_id);
+                $stmt->bindParam(':quantity', $quantity);
+                $stmt->bindParam(':unit_price', $unit_price);
+                $stmt->bindParam(':total_cost', $total_cost);
+                $stmt->bindParam(':notes', $_POST['notes']);
+                $stmt->bindParam(':user_id', $_SESSION['user_id']);
+                $stmt->execute();
+            } elseif (in_array('inventory_id', $columns)) {
+                // Legacy schema referencing inventory table, uses unit_cost/created_by columns
+                $query = "INSERT INTO inventory_transactions (
+                    inventory_id, transaction_type, quantity, unit_cost, 
+                    total_cost, reference_id, notes, created_by
+                ) VALUES (
+                    :inventory_id, 'purchase', :quantity, :unit_price,
+                    :total_cost, NULL, :notes, :user_id
+                )";
+                $stmt = $db->prepare($query);
+                $stmt->bindParam(':inventory_id', $ingredient_id); // best-effort mapping
+                $stmt->bindParam(':quantity', $quantity);
+                $stmt->bindParam(':unit_price', $unit_price);
+                $stmt->bindParam(':total_cost', $total_cost);
+                $stmt->bindParam(':notes', $_POST['notes']);
+                $stmt->bindParam(':user_id', $_SESSION['user_id']);
+                $stmt->execute();
+            } else {
+                $logOk = false;
+                $logMsg = 'inventory_transactions schema không hỗ trợ logging';
+            }
+        } catch (Exception $logEx) {
+            $logOk = false;
+            $logMsg = $logEx->getMessage();
+        }
+
         $db->commit();
-        setAlert('Nhập kho thành công', 'success');
+        $message = 'Nhập kho thành công';
+        if (!$logOk) {
+            $message .= ' (không ghi được lịch sử: ' . $logMsg . ')';
+            setAlert($message, 'warning');
+        } else {
+            setAlert($message, 'success');
+        }
         header("Location: ingredients.php");
         exit();
         
@@ -63,8 +152,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// Get all ingredients for dropdown
-$ingredients = $db->query("SELECT * FROM ingredients ORDER BY ingredient_name")->fetchAll(PDO::FETCH_ASSOC);
+// Get all ingredients for dropdown (guard missing table)
+try {
+    $ingredients = $db->query("SELECT * FROM ingredients ORDER BY ingredient_name")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $ingredients = [];
+    setAlert('Bảng ingredients chưa tồn tại, vui lòng import dữ liệu nguyên liệu.', 'danger');
+}
+
+// Include header after handling POST to prevent header output issues
+include '../../includes/header.php';
 ?>
 
 <div class="container-fluid">
@@ -108,7 +205,7 @@ $ingredients = $db->query("SELECT * FROM ingredients ORDER BY ingredient_name")-
                                 <label class="form-label">Số lượng nhập *</label>
                                 <div class="input-group">
                                     <input type="number" name="quantity" id="quantity" 
-                                           class="form-control" required step="0.01" min="0. 01">
+                                         class="form-control" required step="0.01" min="0.01">
                                     <span class="input-group-text" id="unit-text">-</span>
                                 </div>
                             </div>

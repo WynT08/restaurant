@@ -1,24 +1,25 @@
 <?php
-$page_title = 'Thêm món ăn';
-include '../../includes/header. php';
+require_once '../../config/config.php';
+require_once '../../config/database.php';
+requireLogin();
 requirePermission('manager');
 
-// Get categories
-$categories = $db->query("SELECT * FROM categories WHERE status = 'active' ORDER BY display_order")->fetchAll(PDO::FETCH_ASSOC);
+$database = new Database();
+$db = $database->getConnection();
 
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+$page_title = 'Thêm món ăn';
+
+// Handle form submission BEFORE output
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        // Upload image
         $image_name = '';
-        if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+        if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
             $upload_result = uploadFile($_FILES['image'], MENU_IMAGE_PATH);
             if ($upload_result['success']) {
                 $image_name = $upload_result['filename'];
             }
         }
-        
-        // Insert item
+
         $query = "INSERT INTO menu_items (
             category_id, item_name, description, price, cost_price,
             image, preparation_time, calories, is_vegetarian, is_spicy,
@@ -28,12 +29,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             :image, :preparation_time, :calories, :is_vegetarian, :is_spicy,
             :is_available, :display_order
         )";
-        
+
         $stmt = $db->prepare($query);
         $stmt->bindParam(':category_id', $_POST['category_id']);
         $stmt->bindParam(':item_name', $_POST['item_name']);
         $stmt->bindParam(':description', $_POST['description']);
-        $stmt->bindParam(': price', $_POST['price']);
+        $stmt->bindParam(':price', $_POST['price']);
         $stmt->bindParam(':cost_price', $_POST['cost_price']);
         $stmt->bindParam(':image', $image_name);
         $stmt->bindParam(':preparation_time', $_POST['preparation_time']);
@@ -41,20 +42,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $is_vegetarian = isset($_POST['is_vegetarian']) ? 1 : 0;
         $stmt->bindParam(':is_vegetarian', $is_vegetarian);
         $is_spicy = isset($_POST['is_spicy']) ? 1 : 0;
-        $stmt->bindParam(': is_spicy', $is_spicy);
+        $stmt->bindParam(':is_spicy', $is_spicy);
         $is_available = isset($_POST['is_available']) ? 1 : 0;
         $stmt->bindParam(':is_available', $is_available);
         $stmt->bindParam(':display_order', $_POST['display_order']);
-        
+
         if ($stmt->execute()) {
             setAlert('Thêm món ăn thành công', 'success');
-            header("Location: items.php");
+            header('Location: items.php');
             exit();
         }
     } catch (Exception $e) {
         setAlert('Có lỗi xảy ra: ' . $e->getMessage(), 'danger');
     }
 }
+
+// Get categories for form
+$categories = $db->query("SELECT * FROM categories WHERE status = 'active' ORDER BY display_order")->fetchAll(PDO::FETCH_ASSOC);
+
+include '../../includes/header.php';
 ?>
 
 <div class="container-fluid">
@@ -161,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save"></i> Lưu
                             </button>
-                            <a href="items. php" class="btn btn-secondary">Hủy</a>
+                            <a href="items.php" class="btn btn-secondary">Hủy</a>
                         </div>
                     </form>
                 </div>
@@ -170,4 +176,4 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </div>
 </div>
 
-<? php include '../../includes/footer. php'; ?>
+<?php include '../../includes/footer.php'; ?>

@@ -60,25 +60,8 @@ $stmt->bindParam(':to_date', $to_date);
 $stmt->execute();
 $payment_methods = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Get best selling items
-$query = "SELECT 
-            mi.item_name,
-            SUM(oi.quantity) as total_quantity,
-            SUM(oi.subtotal) as total_revenue
-          FROM order_items oi
-          JOIN menu_items mi ON oi.item_id = mi.item_id
-          JOIN orders o ON oi.order_id = o.order_id
-          WHERE DATE(o.created_at) BETWEEN :from_date AND :to_date
-          AND o.payment_status = 'paid'
-          GROUP BY oi.item_id
-          ORDER BY total_quantity DESC
-          LIMIT 10";
-
-$stmt = $db->prepare($query);
-$stmt->bindParam(':from_date', $from_date);
-$stmt->bindParam(':to_date', $to_date);
-$stmt->execute();
-$best_sellers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Skip best-selling items section per request
+$best_sellers = [];
 ?>
 
 <div class="container-fluid">
@@ -97,7 +80,7 @@ $best_sellers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <!-- Date Range Filter -->
     <div class="card mb-4">
         <div class="card-body">
-            <form method="GET" class="row align-items-end g-3">
+            <form id="sales-filter" method="GET" class="row align-items-end g-3">
                 <div class="col-md-3">
                     <label class="form-label">Từ ngày</label>
                           <input type="date" name="from_date" class="form-control" 
@@ -269,31 +252,7 @@ $best_sellers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
             
-            <!-- Best Sellers -->
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">Top 10 món bán chạy</h6>
-                </div>
-                <div class="card-body">
-                    <div class="list-group list-group-flush">
-                        <?php foreach ($best_sellers as $index => $item): ?>
-                        <div class="list-group-item px-0">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <span class="badge bg-secondary me-2"><?php echo $index + 1; ?></span>
-                                    <strong><?php echo htmlspecialchars($item['item_name']); ?></strong>
-                                    <br>
-                                    <small class="text-muted">
-                                        <?php echo $item['total_quantity']; ?> phần | 
-                                        <?php echo formatMoney($item['total_revenue']); ?>
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            </div>
+            <!-- Top 10 best sellers removed per request -->
         </div>
     </div>
 </div>
@@ -365,10 +324,18 @@ const paymentChart = new Chart(paymentCtx, {
 });
 
 function setToday() {
-    const today = new Date().toISOString().split('T')[0];
-    $('input[name="from_date"]').val(today);
-    $('input[name="to_date"]').val(today);
-    $('form').submit();
+    const d = new Date();
+    const today = [
+        d.getFullYear(),
+        String(d.getMonth() + 1).padStart(2, '0'),
+        String(d.getDate()).padStart(2, '0')
+    ].join('-');
+    const form = document.getElementById('sales-filter');
+    if (form) {
+        form.querySelector('input[name="from_date"]').value = today;
+        form.querySelector('input[name="to_date"]').value = today;
+        form.submit();
+    }
 }
 
 function exportToExcel() {

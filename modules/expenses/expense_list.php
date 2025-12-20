@@ -3,6 +3,25 @@ $page_title = 'Quản lý chi phí';
 include '../../includes/header.php';
 requirePermission('manager');
 
+// Ensure expenses table exists for fresh installs
+try {
+    $db->exec("CREATE TABLE IF NOT EXISTS expenses (
+        expense_id INT AUTO_INCREMENT PRIMARY KEY,
+        expense_type VARCHAR(50) NOT NULL,
+        amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+        description TEXT,
+        expense_date DATE NOT NULL,
+        payment_method VARCHAR(50) DEFAULT NULL,
+        receipt_image VARCHAR(255) DEFAULT NULL,
+        recorded_by INT DEFAULT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT fk_expenses_user FOREIGN KEY (recorded_by) REFERENCES users(user_id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+} catch (Exception $e) {
+    setAlert('Không thể tạo bảng expenses: ' . $e->getMessage(), 'danger');
+}
+
 // Handle delete
 if (isset($_GET['delete'])) {
     $expense_id = $_GET['delete'];
@@ -23,7 +42,7 @@ $from_date = isset($_GET['from_date']) ? $_GET['from_date'] : date('Y-m-01');
 $to_date = isset($_GET['to_date']) ? $_GET['to_date'] : date('Y-m-d');
 $type_filter = isset($_GET['type']) ? $_GET['type'] : 'all';
 
-// Build query
+// Build query for list (respect filters) and compute grand total across all types within date range
 // Schema seed không có cột recorded_by, nên bỏ JOIN và default tên ghi nhận
 // Guard missing expenses table
 try {
@@ -31,11 +50,11 @@ try {
               FROM expenses e
               WHERE DATE(e.expense_date) BETWEEN :from_date AND :to_date";
 
-if ($type_filter != 'all') {
-    $query .= " AND e.expense_type = :type";
-}
+    if ($type_filter != 'all') {
+        $query .= " AND e.expense_type = :type";
+    }
 
-$query .= " ORDER BY e.expense_date DESC";
+    $query .= " ORDER BY e.expense_date DESC";
 
     $stmt = $db->prepare($query);
     $stmt->bindParam(':from_date', $from_date);
@@ -47,22 +66,27 @@ $query .= " ORDER BY e.expense_date DESC";
 
     $stmt->execute();
     $expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Grand total should cover all types in the date range, regardless of type filter
+    $totalStmt = $db->prepare("SELECT COALESCE(SUM(amount),0) FROM expenses WHERE DATE(expense_date) BETWEEN :from_date AND :to_date");
+    $totalStmt->bindParam(':from_date', $from_date);
+    $totalStmt->bindParam(':to_date', $to_date);
+    $totalStmt->execute();
+    $grand_total = (float) $totalStmt->fetchColumn();
 } catch (Exception $e) {
     $expenses = [];
+    $grand_total = 0;
     setAlert('Bảng expenses chưa tồn tại. Vui lòng import schema hoặc tạo bảng.', 'warning');
 }
 
-// Calculate totals by type
+// Calculate totals by type for the displayed list (still respects type filter)
 $totals_by_type = [];
-$grand_total = 0;
-
 foreach ($expenses as $expense) {
     $type = $expense['expense_type'];
     if (!isset($totals_by_type[$type])) {
         $totals_by_type[$type] = 0;
     }
     $totals_by_type[$type] += $expense['amount'];
-    $grand_total += $expense['amount'];
 }
 ?>
 

@@ -4,10 +4,13 @@
   "type": "project",
   "license": "MIT",
   "require": {
-    "php": ">=8.0"
+    "php": ">=8.0",
+    "dompdf/dompdf": "*"
   },
   "autoload": {
-    "classmap": ["classes/"]
+    "psr-4": {
+      "App\\": "app/"
+    }
   },
   "config": {
     "sort-packages": true

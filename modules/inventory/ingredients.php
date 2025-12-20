@@ -3,10 +3,29 @@ $page_title = 'Quản lý nguyên liệu';
 include '../../includes/header.php';
 requirePermission('manager');
 
+// Ensure ingredients table exists (app uses this table)
+try {
+    $db->exec("CREATE TABLE IF NOT EXISTS ingredients (
+        ingredient_id INT AUTO_INCREMENT PRIMARY KEY,
+        ingredient_name VARCHAR(100) NOT NULL,
+        unit VARCHAR(20) NOT NULL,
+        current_stock DECIMAL(10,2) NOT NULL DEFAULT 0,
+        reorder_level DECIMAL(10,2) DEFAULT 0,
+        cost_price DECIMAL(10,2) DEFAULT 0,
+        supplier_name VARCHAR(100) DEFAULT NULL,
+        supplier_phone VARCHAR(50) DEFAULT NULL,
+        last_restocked DATETIME DEFAULT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+} catch (Exception $e) {
+    setAlert('Không thể tạo bảng ingredients: ' . $e->getMessage(), 'danger');
+}
+
 // Handle add ingredient
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'add') {
     try {
-        // Schema dùng reorder_level thay vì min_stock; unit_price column tên cost_price trong seed
+        // Schema dùng reorder_level thay vì min_stock; cost_price là giá đơn vị
         $query = "INSERT INTO ingredients (
             ingredient_name, unit, current_stock, reorder_level, 
             cost_price, supplier_name, supplier_phone
@@ -29,6 +48,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
         }
     } catch (Exception $e) {
         setAlert('Có lỗi xảy ra: ' . $e->getMessage(), 'danger');
+    }
+}
+
+// Handle delete ingredient
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'delete') {
+    $delete_id = (int)($_POST['ingredient_id'] ?? 0);
+    if ($delete_id > 0) {
+        try {
+            $stmt = $db->prepare("DELETE FROM ingredients WHERE ingredient_id = :id");
+            $stmt->bindParam(':id', $delete_id);
+            $stmt->execute();
+            setAlert('Xóa nguyên liệu thành công', 'success');
+        } catch (Exception $e) {
+            setAlert('Không thể xóa nguyên liệu: ' . $e->getMessage(), 'danger');
+        }
+    } else {
+        setAlert('Thiếu mã nguyên liệu để xóa', 'warning');
     }
 }
 
@@ -162,6 +198,13 @@ foreach ($ingredients as $item) {
                                             title="Lịch sử">
                                         <i class="fas fa-history"></i>
                                     </button>
+                                    <form method="POST" class="d-inline" onsubmit="return confirm('Xóa nguyên liệu này?');">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="ingredient_id" value="<?php echo $item['ingredient_id']; ?>">
+                                        <button type="submit" class="btn btn-danger" title="Xóa">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>

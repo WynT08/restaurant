@@ -31,9 +31,14 @@ $categories = $db->query("SELECT * FROM categories ORDER BY display_order")->fet
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3">Quản lý món ăn</h1>
-        <a href="add_item.php" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Thêm món mới
-        </a>
+        <div class="d-flex gap-2">
+            <a href="categories.php" class="btn btn-outline-primary">
+                <i class="fas fa-folder"></i> Danh mục
+            </a>
+            <a href="add_item.php" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Thêm món mới
+            </a>
+        </div>
     </div>
     
     <!-- Filter -->
@@ -41,10 +46,10 @@ $categories = $db->query("SELECT * FROM categories ORDER BY display_order")->fet
         <div class="card-body">
             <div class="row align-items-center">
                 <div class="col-md-4">
-                    <select class="form-select" id="category-filter" onchange="filterByCategory(this. value)">
+                    <select class="form-select" id="category-filter" onchange="filterByCategory(this.value)">
                         <option value="all">Tất cả danh mục</option>
                         <?php foreach ($categories as $cat): ?>
-                        <option value="<?php echo $cat['category_id']; ? >" <? php echo $category_filter == $cat['category_id'] ? 'selected' : ''; ?>>
+                        <option value="<?php echo $cat['category_id']; ?>" <?php echo $category_filter == $cat['category_id'] ? 'selected' : ''; ?>>
                             <?php echo htmlspecialchars($cat['category_name']); ?>
                         </option>
                         <?php endforeach; ?>
@@ -64,22 +69,22 @@ $categories = $db->query("SELECT * FROM categories ORDER BY display_order")->fet
             <div class="card menu-item-card">
                 <div class="item-image">
                     <?php if ($item['image']): ?>
-                        <img src="<? php echo SITE_URL . '/uploads/menu_images/' . $item['image']; ?>" alt="">
+                        <img src="<?php echo SITE_URL . '/uploads/menu_images/' . $item['image']; ?>" alt="">
                     <?php else: ?>
                         <div class="no-image">
                             <i class="fas fa-utensils"></i>
                         </div>
                     <?php endif; ?>
                     
-                    <? php if (! $item['is_available']): ?>
+                    <?php if (!$item['is_available']): ?>
                         <div class="item-badge unavailable">Hết hàng</div>
                     <?php endif; ?>
                     
                     <div class="item-actions">
-                        <a href="edit_item.php?id=<? php echo $item['item_id']; ?>" class="btn btn-sm btn-info">
+                        <a href="edit_item.php?id=<?php echo $item['item_id']; ?>" class="btn btn-sm btn-info">
                             <i class="fas fa-edit"></i>
                         </a>
-                        <button class="btn btn-sm btn-danger" onclick="deleteItem(<? php echo $item['item_id']; ?>)">
+                        <button class="btn btn-sm btn-danger" onclick="deleteItem(<?php echo $item['item_id']; ?>)">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -88,7 +93,7 @@ $categories = $db->query("SELECT * FROM categories ORDER BY display_order")->fet
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <h6 class="mb-0"><?php echo htmlspecialchars($item['item_name']); ?></h6>
-                        <? php if ($item['is_vegetarian']): ?>
+                        <?php if ($item['is_vegetarian']): ?>
                             <span class="badge bg-success" title="Món chay">
                                 <i class="fas fa-leaf"></i>
                             </span>
@@ -103,8 +108,8 @@ $categories = $db->query("SELECT * FROM categories ORDER BY display_order")->fet
                         <strong class="text-primary"><?php echo formatMoney($item['price']); ?></strong>
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" 
-                                   <? php echo $item['is_available'] ? 'checked' : ''; ?>
-                                   onchange="toggleAvailability(<?php echo $item['item_id']; ? >, this.checked)">
+                                   <?php echo $item['is_available'] ? 'checked' : ''; ?>
+                                   onchange="toggleAvailability(<?php echo $item['item_id']; ?>, this.checked)">
                         </div>
                     </div>
                 </div>
@@ -120,7 +125,7 @@ function filterByCategory(categoryId) {
 }
 
 function toggleAvailability(itemId, isAvailable) {
-    $.post('ajax_toggle_availability. php', {
+    $.post('ajax_toggle_availability.php', {
         item_id: itemId,
         is_available: isAvailable ?  1 : 0
     }, function(response) {
@@ -145,7 +150,7 @@ function deleteItem(itemId) {
 // Search
 $('#search-items').on('keyup', function() {
     const value = $(this).val().toLowerCase();
-    $('. menu-item-card').each(function() {
+    $('.menu-item-card').each(function() {
         const text = $(this).text().toLowerCase();
         $(this).parent().toggle(text.indexOf(value) > -1);
     });
