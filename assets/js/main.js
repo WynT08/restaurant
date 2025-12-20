@@ -4,20 +4,33 @@ $(document).ready(function() {
     var $sidebar = $('#sidebar');
     var $body = $('body');
     
+    // Debug: Check if elements exist
+    console.log('Sidebar found:', $sidebar.length);
+    console.log('Toggle button found:', $('#sidebarToggle').length);
+    
     // Sidebar toggle for desktop and mobile
-    $('#sidebarToggle').on('click', function() {
+    $('#sidebarToggle').on('click', function(e) {
+        e.preventDefault();
+        console.log('Toggle clicked, window width:', $(window).width());
+        
         if ($(window).width() < 768) {
+            // Mobile:  toggle show class on sidebar
             $sidebar.toggleClass('show');
+            $body.toggleClass('sidebar-open');
+            console.log('Mobile: sidebar has show? ', $sidebar.hasClass('show'));
         } else {
+            // Desktop: toggle collapsed class on body
             $body.toggleClass('sidebar-collapsed');
+            console. log('Desktop: body has collapsed? ', $body.hasClass('sidebar-collapsed'));
         }
     });
     
     // Close sidebar when clicking outside on mobile
     $(document).on('click', function(e) {
         if ($(window).width() < 768) {
-            if (! $(e.target).closest('#sidebar, #sidebarToggle').length) {
+            if (!$(e.target).closest('#sidebar, #sidebarToggle').length) {
                 $sidebar.removeClass('show');
+                $body. removeClass('sidebar-open');
             }
         }
     });
@@ -26,6 +39,7 @@ $(document).ready(function() {
     $(window).on('resize', function() {
         if ($(this).width() >= 768) {
             $sidebar.removeClass('show');
+            $body.removeClass('sidebar-open');
         } else {
             $body.removeClass('sidebar-collapsed');
         }
@@ -46,7 +60,7 @@ $(document).ready(function() {
     // Initialize tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap. Tooltip(tooltipTriggerEl);
+        return new bootstrap.Tooltip(tooltipTriggerEl);
     });
     
     // Initialize popovers
@@ -89,10 +103,10 @@ $(document).ready(function() {
     function timerIncrement() {
         idleTime++;
         if (idleTime > 30) { // 30 minutes
-            if (confirm('Bạn đã không hoạt động trong 30 phút. Bạn có muốn tiếp tục? ')) {
+            if (confirm('Bạn đã không hoạt động trong 30 phút. Bạn có muốn tiếp tục?')) {
                 idleTime = 0;
             } else {
-                window.location.href = '/modules/auth/logout.php';
+                window.location.href = '/modules/auth/logout. php';
             }
         }
     }
@@ -142,7 +156,7 @@ function loadingSpinner(show = true) {
     if (show) {
         if ($('#loading-spinner').length === 0) {
             $('body').append(`
-                <div id="loading-spinner" style="position: fixed; top: 0; left: 0; width:  100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+                <div id="loading-spinner" style="position: fixed; top: 0; left: 0; width:  100%; height: 100%; background:  rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items:  center; justify-content: center;">
                     <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
                         <span class="visually-hidden">Loading...</span>
                     </div>
@@ -157,7 +171,7 @@ function loadingSpinner(show = true) {
 // AJAX Error Handler
 $(document).ajaxError(function(event, jqxhr, settings, thrownError) {
     console.error('AJAX Error:', thrownError);
-    showToast('Có lỗi xảy ra.  Vui lòng thử lại! ', 'danger');
+    showToast('Có lỗi xảy ra. Vui lòng thử lại! ', 'danger');
     loadingSpinner(false);
 });
 
@@ -168,7 +182,7 @@ function printElement(elementId) {
     printWindow.document.write('<html><head><title>Print</title>');
     printWindow.document.write('<link rel="stylesheet" href="/assets/css/style.css">');
     printWindow.document.write('</head><body>');
-    printWindow.document. write(content);
+    printWindow.document.write(content);
     printWindow.document.write('</body></html>');
     printWindow.document.close();
     printWindow.print();
@@ -201,6 +215,6 @@ function downloadCSV(csv, filename) {
     downloadLink.download = filename;
     downloadLink. href = window.URL.createObjectURL(csvFile);
     downloadLink.style.display = 'none';
-    document.body.appendChild(downloadLink);
+    document.body. appendChild(downloadLink);
     downloadLink.click();
 }

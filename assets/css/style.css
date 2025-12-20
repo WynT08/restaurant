@@ -36,13 +36,10 @@ body {
     position: fixed;
     height: 100vh;
     overflow-y: auto;
-    transition: all 0.3s;
+    transition: transform 0.3s ease-in-out;
     z-index: 1000;
-}
-
-/* Collapsed sidebar for desktop */
-body.sidebar-collapsed .sidebar {
-    margin-left: calc(-1 * var(--sidebar-width));
+    top: 0;
+    left:  0;
 }
 
 .sidebar-header {
@@ -59,7 +56,7 @@ body.sidebar-collapsed .sidebar {
 .sidebar-menu {
     list-style: none;
     padding: 0;
-    margin:  0;
+    margin: 0;
 }
 
 .sidebar-menu li {
@@ -68,7 +65,7 @@ body.sidebar-collapsed .sidebar {
 
 .sidebar-menu li.menu-header {
     padding:  15px 20px 10px;
-    font-size:  0.75rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 1px;
     opacity: 0.7;
@@ -104,15 +101,21 @@ body.sidebar-collapsed .sidebar {
 .main-content {
     flex: 1;
     margin-left: var(--sidebar-width);
-    transition: all 0.3s;
-}
-
-body.sidebar-collapsed .main-content {
-    margin-left: 0;
+    transition: margin-left 0.3s ease-in-out;
+    min-height: 100vh;
 }
 
 .content-wrapper {
     padding: 30px;
+}
+
+/* Desktop:  Collapsed State */
+body.sidebar-collapsed .sidebar {
+    transform: translateX(-100%);
+}
+
+body.sidebar-collapsed .main-content {
+    margin-left: 0;
 }
 
 /* Navbar */
@@ -121,7 +124,7 @@ body.sidebar-collapsed .main-content {
 }
 
 .navbar .nav-link {
-    color:  #495057;
+    color: #495057;
     position: relative;
 }
 
@@ -235,22 +238,38 @@ body.sidebar-collapsed .main-content {
     height: 2rem;
 }
 
-/* Responsive */
+/* Mobile Responsive */
 @media (max-width: 768px) {
+    /* Hide sidebar by default on mobile */
     .sidebar {
-        margin-left: calc(-1 * var(--sidebar-width));
+        transform: translateX(-100%);
     }
     
+    /* Show sidebar when . show class is added */
     .sidebar.show {
-        margin-left: 0;
+        transform: translateX(0);
+        box-shadow: 2px 0 15px rgba(0,0,0,0.3);
     }
     
+    /* Main content always takes full width on mobile */
     .main-content {
-        margin-left:  0;
+        margin-left: 0 !important;
     }
     
     .content-wrapper {
         padding: 15px;
+    }
+    
+    /* Overlay when sidebar is open on mobile */
+    body.sidebar-open::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom:  0;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
     }
 }
 
