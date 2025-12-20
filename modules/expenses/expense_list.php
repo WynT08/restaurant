@@ -25,9 +25,11 @@ $type_filter = isset($_GET['type']) ? $_GET['type'] : 'all';
 
 // Build query
 // Schema seed không có cột recorded_by, nên bỏ JOIN và default tên ghi nhận
-$query = "SELECT e.*, NULL as recorded_by_name
-          FROM expenses e
-          WHERE DATE(e.expense_date) BETWEEN :from_date AND :to_date";
+// Guard missing expenses table
+try {
+    $query = "SELECT e.*, NULL as recorded_by_name
+              FROM expenses e
+              WHERE DATE(e.expense_date) BETWEEN :from_date AND :to_date";
 
 if ($type_filter != 'all') {
     $query .= " AND e.expense_type = :type";
@@ -35,16 +37,20 @@ if ($type_filter != 'all') {
 
 $query .= " ORDER BY e.expense_date DESC";
 
-$stmt = $db->prepare($query);
-$stmt->bindParam(':from_date', $from_date);
-$stmt->bindParam(':to_date', $to_date);
+    $stmt = $db->prepare($query);
+    $stmt->bindParam(':from_date', $from_date);
+    $stmt->bindParam(':to_date', $to_date);
 
-if ($type_filter != 'all') {
-    $stmt->bindParam(':type', $type_filter);
+    if ($type_filter != 'all') {
+        $stmt->bindParam(':type', $type_filter);
+    }
+
+    $stmt->execute();
+    $expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $expenses = [];
+    setAlert('Bảng expenses chưa tồn tại. Vui lòng import schema hoặc tạo bảng.', 'warning');
 }
-
-$stmt->execute();
-$expenses = $stmt->fetchAll(PDO:: FETCH_ASSOC);
 
 // Calculate totals by type
 $totals_by_type = [];

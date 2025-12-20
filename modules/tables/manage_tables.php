@@ -5,11 +5,10 @@ include '../../includes/header.php';
 // Handle add table
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'add') {
     try {
-        $query = "INSERT INTO restaurant_tables (table_number, table_name, capacity, location, status)
-                  VALUES (:table_number, :table_name, :capacity, :location, 'available')";
+        $query = "INSERT INTO restaurant_tables (table_number, capacity, location, status)
+                  VALUES (:table_number, :capacity, :location, 'available')";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':table_number', $_POST['table_number']);
-        $stmt->bindParam(':table_name', $_POST['table_name']);
         $stmt->bindParam(':capacity', $_POST['capacity']);
         $stmt->bindParam(':location', $_POST['location']);
         
@@ -140,7 +139,7 @@ foreach ($tables as $table) {
                         <i class="fas fa-table fa-2x text-<?php echo $status_classes[$table['status']]; ?>"></i>
                     </div>
                     <h5 class="mb-1"><?php echo htmlspecialchars($table['table_number']); ?></h5>
-                    <?php if ($table['table_name']): ?>
+                    <?php if (!empty($table['table_name'] ?? '')): ?>
                     <small class="text-muted d-block"><?php echo htmlspecialchars($table['table_name']); ?></small>
                     <?php endif; ?>
                     <div class="my-2">
@@ -188,11 +187,6 @@ foreach ($tables as $table) {
                     <div class="mb-3">
                         <label class="form-label">Số bàn *</label>
                         <input type="text" name="table_number" class="form-control" required placeholder="VD: T01, B01">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Tên bàn</label>
-                        <input type="text" name="table_name" class="form-control" placeholder="VD: Bàn VIP 1">
                     </div>
                     
                     <div class="mb-3">

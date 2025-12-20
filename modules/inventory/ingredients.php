@@ -32,9 +32,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     }
 }
 
-// Get all ingredients
-$query = "SELECT * FROM ingredients ORDER BY ingredient_name";
-$ingredients = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
+// Get all ingredients (guard missing table)
+try {
+    $query = "SELECT * FROM ingredients ORDER BY ingredient_name";
+    $ingredients = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $ingredients = [];
+    setAlert('Bảng ingredients chưa tồn tại. Vui lòng import schema hoặc tạo bảng.', 'warning');
+}
 
 // Count low stock items using reorder_level
 $low_stock_count = 0;

@@ -23,7 +23,7 @@ $stats = [];
 $query = "SELECT COUNT(*) as total_orders, 
           COALESCE(SUM(total_amount), 0) as total_revenue
           FROM orders 
-          WHERE waiter_id = :user_id 
+          WHERE user_id = :user_id 
           AND payment_status = 'paid'";
 $stmt = $db->prepare($query);
 $stmt->bindParam(':user_id', $user_id);
@@ -32,15 +32,19 @@ $order_stats = $stmt->fetch(PDO::FETCH_ASSOC);
 $stats['total_orders'] = $order_stats['total_orders'];
 $stats['total_revenue'] = $order_stats['total_revenue'];
 
-// Recent activity
-$query = "SELECT * FROM activity_logs 
-          WHERE user_id = :user_id 
-          ORDER BY created_at DESC 
-          LIMIT 20";
-$stmt = $db->prepare($query);
-$stmt->bindParam(':user_id', $user_id);
-$stmt->execute();
-$activities = $stmt->fetchAll(PDO:: FETCH_ASSOC);
+// Recent activity (guard if activity_logs not present)
+try {
+    $query = "SELECT * FROM activity_logs 
+              WHERE user_id = :user_id 
+              ORDER BY created_at DESC 
+              LIMIT 20";
+    $stmt = $db->prepare($query);
+    $stmt->bindParam(':user_id', $user_id);
+    $stmt->execute();
+    $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $activities = [];
+}
 ?>
 
 <div class="container-fluid">
@@ -98,7 +102,8 @@ $activities = $stmt->fetchAll(PDO:: FETCH_ASSOC);
                         <p><i class="fas fa-calendar text-muted me-2"></i> Tham gia: <?php echo formatDate($user['created_at']); ?></p>
                         <p>
                             <i class="fas fa-circle text-muted me-2"></i> 
-                            <?php if ($user['status'] == 'active'): ?>
+                            <?php $user_status = $user['status'] ?? 'active'; ?>
+                            <?php if ($user_status == 'active'): ?>
                                 <span class="badge bg-success">Đang làm việc</span>
                             <?php else: ?>
                                 <span class="badge bg-secondary">Nghỉ việc</span>

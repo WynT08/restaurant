@@ -7,10 +7,9 @@ $status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
 $date_filter = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
 
 // Build query
-$query = "SELECT r.*, rt.table_number, u.full_name as created_by_name
+$query = "SELECT r.*, rt.table_number
           FROM reservations r
           LEFT JOIN restaurant_tables rt ON r.table_id = rt.table_id
-          LEFT JOIN users u ON r. created_by = u.user_id
           WHERE DATE(r.reservation_date) = :date";
 
 if ($status_filter != 'all') {

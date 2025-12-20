@@ -216,9 +216,11 @@ foreach ($users as $user) {
                                 </span>
                             </td>
                             <td>
-                                <?php if ($user['status'] == 'active'): ?>
+                                <?php
+                                $user_status = $user['status'] ?? 'active';
+                                if ($user_status == 'active'): ?>
                                     <span class="badge bg-success">Đang làm</span>
-                                <?php else:  ?>
+                                <?php else: ?>
                                     <span class="badge bg-secondary">Nghỉ việc</span>
                                 <?php endif; ?>
                             </td>
