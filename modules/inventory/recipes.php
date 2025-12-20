@@ -17,9 +17,6 @@ $items = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
 // Get all ingredients for dropdown
 $ingredients = $db->query("SELECT * FROM ingredients ORDER BY ingredient_name")->fetchAll(PDO::FETCH_ASSOC);
 
-// Get categories for filtering
-$categories = $db->query("SELECT category_id, category_name FROM categories ORDER BY display_order")
-                 ->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <div class="container-fluid">
@@ -27,22 +24,6 @@ $categories = $db->query("SELECT category_id, category_name FROM categories ORDE
         <h1 class="h3">Công thức món ăn</h1>
     </div>
 
-    <div class="card mb-3">
-        <div class="card-body">
-            <div class="row g-3 align-items-center">
-                <div class="col-md-6 col-lg-4">
-                    <label class="form-label mb-1">Lọc theo danh mục</label>
-                    <select id="recipe-category-filter" class="form-select">
-                        <option value="all">Tất cả danh mục</option>
-                        <?php foreach ($categories as $cat): ?>
-                        <option value="<?php echo $cat['category_id']; ?>"><?php echo htmlspecialchars($cat['category_name']); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
-        </div>
-    </div>
-    
     <div class="row">
         <?php foreach ($items as $item): ?>
            <div class="col-lg-6 mb-4 recipe-card" 
@@ -180,6 +161,7 @@ $categories = $db->query("SELECT category_id, category_name FROM categories ORDE
 const addIngredientModal = new bootstrap.Modal(document.getElementById('addIngredientModal'));
 
 function addIngredient(itemId) {
+    console.log('addIngredient called', itemId);
     $('#item-id').val(itemId);
     addIngredientModal.show();
 }
@@ -211,23 +193,6 @@ function deleteRecipe(recipeId) {
     }
 }
 
-// Filter recipes by category (similar to menu page)
-$(function() {
-    function applyCategoryFilter() {
-        const selected = $('#recipe-category-filter').val();
-        const selectedText = ($('#recipe-category-filter option:selected').text() || '').toLowerCase().trim();
-
-        $('.recipe-card').each(function() {
-            const catId = String($(this).data('category-id') || '');
-            const catName = ($(this).data('category') || '').toLowerCase();
-            const match = selected === 'all' || catId === selected || catName === selectedText;
-            $(this).toggle(match);
-        });
-    }
-
-    $('#recipe-category-filter').on('change', applyCategoryFilter);
-    applyCategoryFilter();
-});
 </script>
 
 <?php include '../../includes/footer.php'; ?>
