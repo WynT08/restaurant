@@ -2,13 +2,22 @@
 $page_title = 'POS - Point of Sale';
 include '../../includes/header.php';
 
-// Get categories (schema không có cột status)
-$query = "SELECT * FROM categories ORDER BY display_order";
-$categories = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
+try {
+    // Get categories; if display_order missing, fall back to name
+    $query = "SELECT * FROM categories ORDER BY display_order, category_name";
+    $categories = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $query = "SELECT * FROM categories ORDER BY category_name";
+    $categories = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
+}
 
-// Get available tables
-$query = "SELECT * FROM restaurant_tables WHERE status = 'available' ORDER BY table_number";
-$tables = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
+try {
+    // Get available tables
+    $query = "SELECT * FROM restaurant_tables WHERE status = 'available' ORDER BY table_number";
+    $tables = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $tables = [];
+}
 ?>
 
 <div class="pos-container">
@@ -114,7 +123,7 @@ $tables = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
             </div>
             <div class="modal-body">
                 <div class="payment-summary mb-3">
-                    <h4 class="text-center">Tổng tiền:  <span id="payment-total" class="text-primary">0đ</span></h4>
+                    <h4 class="text-center">Tổng tiền: <span id="payment-total" class="text-primary">0đ</span></h4>
                 </div>
                 
                 <div class="mb-3">
@@ -130,7 +139,7 @@ $tables = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
                 <div class="mb-3" id="cash-payment-section">
                     <label class="form-label">Tiền khách đưa</label>
                     <input type="number" id="customer-paid" class="form-control" min="0">
-                    <small class="text-muted">Tiền thừa: <span id="change-amount">0đ</span></small>
+                    <small class="text-muted">Tiền thừa:  <span id="change-amount">0đ</span></small>
                 </div>
                 
                 <div class="mb-3">
@@ -159,3 +168,6 @@ $tables = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
 </div>
 
 <?php include '../../includes/footer.php'; ?>
+<script>
+    window.SITE_URL = '<?php echo SITE_URL; ?>';
+</script>

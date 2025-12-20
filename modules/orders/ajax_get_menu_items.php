@@ -13,19 +13,19 @@ $search = isset($_GET['search']) ? $_GET['search'] : '';
 $query = "SELECT * FROM menu_items WHERE is_available = 1";
 
 if ($category_id != 'all') {
-    $query .= " AND category_id = : category_id";
+    $query .= " AND category_id = :category_id";
 }
 
 if (! empty($search)) {
     $query .= " AND item_name LIKE :search";
 }
 
-$query .= " ORDER BY display_order, item_name";
+$query .= " ORDER BY item_name";
 
 $stmt = $db->prepare($query);
 
 if ($category_id != 'all') {
-    $stmt->bindParam(':category_id', $category_id);
+    $stmt->bindParam(':category_id', $category_id, PDO::PARAM_INT);
 }
 
 if (!empty($search)) {
