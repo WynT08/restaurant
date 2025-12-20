@@ -22,10 +22,18 @@ $stmt = $db->prepare($query);
 $stmt->execute();
 $stats['today_orders'] = $stmt->fetch(PDO::FETCH_ASSOC)['today_orders'];
 
-// Available tables
+// Available tables excluding those có lịch hẹn trong 3h tới
 $query = "SELECT COUNT(*) as available_tables 
-          FROM restaurant_tables 
-          WHERE status = 'available'";
+                    FROM restaurant_tables t
+                    WHERE t.status = 'available'
+                    AND t.table_id NOT IN (
+                            SELECT DISTINCT r.table_id
+                            FROM reservations r
+                            WHERE r.table_id IS NOT NULL
+                                AND r.status IN ('pending','confirmed')
+                                AND CONCAT(r.reservation_date, ' ', r.reservation_time) 
+                                        BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 3 HOUR)
+                    )";
 $stmt = $db->prepare($query);
 $stmt->execute();
 $stats['available_tables'] = $stmt->fetch(PDO:: FETCH_ASSOC)['available_tables'];

@@ -108,6 +108,30 @@ try {
         $stmt->bindParam(':payment_method', $data['payment_method']);
         $stmt->bindParam(':amount', $total_amount);
         $stmt->execute();
+
+        // Nếu là bàn đã đặt, sau khi thanh toán đổi trạng thái đặt bàn -> completed và mở bàn trống
+        if (!empty($data['table_id'])) {
+            try {
+                $resvStmt = $db->prepare("SELECT reservation_id FROM reservations
+                    WHERE table_id = :tid AND status IN ('pending','confirmed')
+                    ORDER BY ABS(TIMESTAMPDIFF(SECOND, CONCAT(reservation_date,' ',reservation_time), NOW()))
+                    LIMIT 1");
+                $resvStmt->bindParam(':tid', $data['table_id'], PDO::PARAM_INT);
+                $resvStmt->execute();
+                $reservation = $resvStmt->fetch(PDO::FETCH_ASSOC);
+                if ($reservation) {
+                    $updRes = $db->prepare("UPDATE reservations SET status = 'completed' WHERE reservation_id = :rid");
+                    $updRes->bindParam(':rid', $reservation['reservation_id'], PDO::PARAM_INT);
+                    $updRes->execute();
+                }
+                // Mở bàn lại sau khi thanh toán
+                $updTable = $db->prepare("UPDATE restaurant_tables SET status = 'available' WHERE table_id = :tid");
+                $updTable->bindParam(':tid', $data['table_id'], PDO::PARAM_INT);
+                $updTable->execute();
+            } catch (Exception $e) {
+                // bỏ qua nếu bảng reservations không tồn tại
+            }
+        }
     }
     
     // Update table status

@@ -24,6 +24,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
 $query = "SELECT * FROM restaurant_tables ORDER BY table_number";
 $tables = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
 
+// Mark tables with reservations in next 3h as occupied (pending/confirmed)
+$reservedStmt = $db->prepare("SELECT DISTINCT table_id FROM reservations
+    WHERE table_id IS NOT NULL
+      AND status IN ('pending','confirmed')
+      AND CONCAT(reservation_date, ' ', reservation_time) BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 3 HOUR)");
+$reservedStmt->execute();
+$reservedTables = array_column($reservedStmt->fetchAll(PDO::FETCH_ASSOC), 'table_id');
+foreach ($tables as &$t) {
+    if (in_array($t['table_id'], $reservedTables, true)) {
+        $t['status'] = 'occupied';
+    }
+}
+unset($t);
+
 // Count statistics
 $stats = [
     'available' => 0,

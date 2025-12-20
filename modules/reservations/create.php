@@ -1,44 +1,82 @@
 <?php
+require_once '../../config/config.php';
+require_once '../../config/database.php';
+requireLogin();
+
+$database = new Database();
+$db = $database->getConnection();
+
 $page_title = 'Tạo đặt bàn mới';
-include '../../includes/header.php';
 
-// Get available tables
-$query = "SELECT * FROM restaurant_tables WHERE status IN ('available', 'reserved') ORDER BY table_number";
-$tables = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
-
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+// Handle form submission BEFORE any HTML output
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
+        $table_id = !empty($_POST['table_id']) ? (int) $_POST['table_id'] : null;
+        $customer_email = !empty($_POST['customer_email']) ? $_POST['customer_email'] : null;
+        $special_requests = !empty($_POST['special_requests']) ? $_POST['special_requests'] : null;
+        $reserveDateTime = $_POST['reservation_date'] . ' ' . $_POST['reservation_time'];
+
+        // Không cho đặt trùng bàn trong khung ±3 giờ với các booking pending/confirmed
+        if ($table_id !== null) {
+            $conflict = $db->prepare("SELECT 1 FROM reservations
+                WHERE table_id = :tid
+                  AND status IN ('pending','confirmed')
+                  AND ABS(TIMESTAMPDIFF(MINUTE, CONCAT(reservation_date,' ',reservation_time), :dt)) < 180
+                LIMIT 1");
+            $conflict->bindParam(':tid', $table_id, PDO::PARAM_INT);
+            $conflict->bindParam(':dt', $reserveDateTime);
+            $conflict->execute();
+            if ($conflict->fetch()) {
+                throw new Exception('Bàn này đã có lịch gần thời gian đặt (±3 giờ). Chọn bàn khác hoặc giờ khác.');
+            }
+        }
+
         $query = "INSERT INTO reservations (
             customer_name, customer_phone, customer_email,
             table_id, reservation_date, reservation_time,
-            number_of_guests, special_requests, status, created_by
+            number_of_guests, special_requests, status
         ) VALUES (
             :customer_name, :customer_phone, :customer_email,
             :table_id, :reservation_date, :reservation_time,
-            :number_of_guests, :special_requests, 'pending', :created_by
+            :number_of_guests, :special_requests, 'pending'
         )";
-        
+
         $stmt = $db->prepare($query);
         $stmt->bindParam(':customer_name', $_POST['customer_name']);
         $stmt->bindParam(':customer_phone', $_POST['customer_phone']);
-        $stmt->bindParam(':customer_email', $_POST['customer_email']);
-        $stmt->bindParam(':table_id', $_POST['table_id']);
+        $stmt->bindParam(':customer_email', $customer_email);
+        if ($table_id === null) {
+            $stmt->bindValue(':table_id', null, PDO::PARAM_NULL);
+        } else {
+            $stmt->bindParam(':table_id', $table_id, PDO::PARAM_INT);
+        }
         $stmt->bindParam(':reservation_date', $_POST['reservation_date']);
         $stmt->bindParam(':reservation_time', $_POST['reservation_time']);
-        $stmt->bindParam(':number_of_guests', $_POST['number_of_guests']);
-        $stmt->bindParam(':special_requests', $_POST['special_requests']);
-        $stmt->bindParam(':created_by', $_SESSION['user_id']);
-        
+        $stmt->bindParam(':number_of_guests', $_POST['number_of_guests'], PDO::PARAM_INT);
+        $stmt->bindParam(':special_requests', $special_requests);
+
         if ($stmt->execute()) {
+            // Đánh dấu bàn đã được giữ nếu có chọn bàn
+            if ($table_id !== null) {
+                $updateTable = $db->prepare("UPDATE restaurant_tables SET status = 'reserved' WHERE table_id = :tid");
+                $updateTable->bindParam(':tid', $table_id, PDO::PARAM_INT);
+                $updateTable->execute();
+            }
+
             setAlert('Đặt bàn thành công', 'success');
-            header("Location: list.php");
+            header('Location: list.php');
             exit();
         }
     } catch (Exception $e) {
         setAlert('Có lỗi xảy ra: ' . $e->getMessage(), 'danger');
     }
 }
+
+// Get available tables after processing POST
+$query = "SELECT * FROM restaurant_tables WHERE status IN ('available', 'reserved') ORDER BY table_number";
+$tables = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
+
+include '../../includes/header.php';
 ?>
 
 <div class="container-fluid">

@@ -12,8 +12,10 @@ try {
 }
 
 try {
-    // Get available tables
-    $query = "SELECT * FROM restaurant_tables WHERE status = 'available' ORDER BY table_number";
+    // Cho phép chọn bàn đang reserved (đặt trước) để lên món, ưu tiên bàn trống
+    $query = "SELECT * FROM restaurant_tables 
+              WHERE status IN ('available','reserved')
+              ORDER BY FIELD(status,'available','reserved','occupied','maintenance'), table_number";
     $tables = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     $tables = [];
