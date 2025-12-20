@@ -81,17 +81,8 @@ function loadMenuItems(categoryId, search = '') {
             $('#menu-items-grid').html('<div class="text-center"><i class="fas fa-spinner fa-spin fa-2x"></i></div>');
         },
         success: function(items) {
-            console.log('Items loaded:', items.length);
-            let filtered = Array.isArray(items) ? items : [];
-            const cat = categoryId === undefined || categoryId === null || categoryId === '' ? 'all' : categoryId;
-            if (cat !== 'all') {
-                filtered = filtered.filter(item => String(item.category_id) === String(cat));
-            }
-            if (search) {
-                const term = search.toLowerCase();
-                filtered = filtered.filter(item => (item.item_name || '').toLowerCase().includes(term));
-            }
-            displayMenuItems(filtered);
+            console.log('Items loaded:', items. length);
+            displayMenuItems(items);
         },
         error: function(xhr, status, error) {
             console.error('Error loading menu:', error);
@@ -118,7 +109,7 @@ function displayMenuItems(items) {
                  data-item-name="${item.item_name}"
                  data-item-price="${item.price}">
                 ${item.image ? 
-                    `<img src="${typeof SITE_URL !== 'undefined' ? SITE_URL : ''}/uploads/menu_images/${item.image}" alt="${item.item_name}">` : 
+                    `<img src="${SITE_URL}/uploads/menu_images/${item.image}" alt="${item.item_name}">` : 
                     '<div style="width: 100%;height:120px;background:#f0f0f0;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;"><i class="fas fa-utensils fa-3x text-muted"></i></div>'
                 }
                 <div class="item-name">${item.item_name}</div>

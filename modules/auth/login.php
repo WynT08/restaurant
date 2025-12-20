@@ -20,20 +20,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $database = new Database();
         $db = $database->getConnection();
         
-        $query = "SELECT * FROM users WHERE email = :email AND status = 'active'";
+        // Schema dùng password và role; is_active để chặn tài khoản khóa
+        $query = "SELECT * FROM users WHERE email = :email AND is_active = 1";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':email', $email);
         $stmt->execute();
         
         if ($stmt->rowCount() > 0) {
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            // Hỗ trợ cả cột password (schema) và password_hash (nếu đã đổi)
+            $storedHash = trim($user['password'] ?? ($user['password_hash'] ?? ''));
+
+            $isValid = false;
+            if (!empty($storedHash)) {
+                if (str_starts_with($storedHash, '$2y$')) {
+                    $isValid = password_verify($password, $storedHash);
+                } else {
+                    // Trường hợp dữ liệu lưu plain-text (không khuyến nghị)
+                    $isValid = hash_equals($storedHash, $password);
+                }
+            }
             
-            if (password_verify($password, $user['password_hash'])) {
+            if ($isValid) {
                 // Set session
                 $_SESSION['user_id'] = $user['user_id'];
-                $_SESSION['username'] = $user['email'];
+                $_SESSION['username'] = $user['username'] ?? $user['email'];
                 $_SESSION['full_name'] = $user['full_name'];
-                $_SESSION['user_role'] = $user['user_role'];
+                $_SESSION['user_role'] = $user['role'] ?? ($user['user_role'] ?? 'staff');
                 
                 // Log activity
                 logActivity($db, $user['user_id'], 'login', 'User logged in');

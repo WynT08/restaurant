@@ -1,4 +1,5 @@
 <?php
+ob_start();
 $page_title = 'Quản lý nhân viên';
 include '../../includes/header.php';
 requirePermission('admin');
@@ -32,12 +33,10 @@ $status_filter = isset($_GET['status']) ? $_GET['status'] :  'all';
 $query = "SELECT * FROM users WHERE 1=1";
 
 if ($role_filter != 'all') {
-    $query .= " AND user_role = :role";
+    $query .= " AND role = :role";
 }
 
-if ($status_filter != 'all') {
-    $query .= " AND status = :status";
-}
+// users table không có cột status; bỏ lọc này
 
 $query .= " ORDER BY created_at DESC";
 
@@ -45,10 +44,6 @@ $stmt = $db->prepare($query);
 
 if ($role_filter != 'all') {
     $stmt->bindParam(':role', $role_filter);
-}
-
-if ($status_filter != 'all') {
-    $stmt->bindParam(':status', $status_filter);
 }
 
 $stmt->execute();
@@ -65,7 +60,7 @@ $role_counts = [
 ];
 
 foreach ($users as $user) {
-    $role_key = $user['user_role'] ?? 'staff';
+    $role_key = $user['role'] ?? ($user['user_role'] ?? 'staff');
     if (isset($role_counts[$role_key])) {
         $role_counts[$role_key]++;
     }
