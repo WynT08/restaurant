@@ -254,28 +254,32 @@ foreach ($tables as $table) {
 </style>
 
 <script>
-const changeStatusModal = new bootstrap.Modal(document.getElementById('changeStatusModal'));
+let changeStatusModal;
 
-// Filter tables
-$('#location-filter, #status-filter').on('change', function() {
-    const location = $('#location-filter').val();
-    const status = $('#status-filter').val();
-    
-    $('.table-item').each(function() {
-        const itemLocation = $(this).data('location');
-        const itemStatus = $(this).data('status');
+$(document).ready(function() {
+    changeStatusModal = new bootstrap.Modal(document.getElementById('changeStatusModal'));
+
+    // Filter tables
+    $('#location-filter, #status-filter').on('change', function() {
+        const location = $('#location-filter').val();
+        const status = $('#status-filter').val();
         
-        let showItem = true;
-        
-        if (location !== 'all' && itemLocation !== location) {
-            showItem = false;
-        }
-        
-        if (status !== 'all' && itemStatus !== status) {
-            showItem = false;
-        }
-        
-        $(this).toggle(showItem);
+        $('.table-item').each(function() {
+            const itemLocation = $(this).data('location');
+            const itemStatus = $(this).data('status');
+            
+            let showItem = true;
+            
+            if (location !== 'all' && itemLocation !== location) {
+                showItem = false;
+            }
+            
+            if (status !== 'all' && itemStatus !== status) {
+                showItem = false;
+            }
+            
+            $(this).toggle(showItem);
+        });
     });
 });
 
