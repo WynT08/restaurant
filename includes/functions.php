@@ -150,11 +150,11 @@ function getCurrentUser($db) {
 function logActivity($db, $user_id, $action, $description) {
     try {
         $query = "INSERT INTO activity_logs (user_id, action, description, ip_address) 
-                  VALUES (:user_id, :action, :description, :ip_address)";
+              VALUES (:user_id, :action, :description, :ip_address)";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':user_id', $user_id);
         $stmt->bindParam(':action', $action);
-        $stmt->bindParam(': description', $description);
+        $stmt->bindParam(':description', $description);
         $ip = $_SERVER['REMOTE_ADDR'];
         $stmt->bindParam(':ip_address', $ip);
         $stmt->execute();

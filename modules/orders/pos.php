@@ -2,8 +2,8 @@
 $page_title = 'POS - Point of Sale';
 include '../../includes/header.php';
 
-// Get categories and menu items
-$query = "SELECT * FROM categories WHERE status = 'active' ORDER BY display_order";
+// Get categories (schema không có cột status)
+$query = "SELECT * FROM categories ORDER BY display_order";
 $categories = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
 
 // Get available tables
@@ -24,11 +24,11 @@ $tables = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
             <button class="category-btn active" data-category="all">
                 <i class="fas fa-th"></i> Tất cả
             </button>
-            <? php foreach ($categories as $cat): ?>
+            <?php foreach ($categories as $cat): ?>
             <button class="category-btn" data-category="<?php echo $cat['category_id']; ?>">
-                <? php echo htmlspecialchars($cat['category_name']); ?>
+                <?php echo htmlspecialchars($cat['category_name']); ?>
             </button>
-            <? php endforeach; ?>
+            <?php endforeach; ?>
         </div>
         
         <!-- Menu items grid -->
@@ -51,7 +51,7 @@ $tables = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
                     <option value="">Chọn bàn... </option>
                     <?php foreach ($tables as $table): ?>
                     <option value="<?php echo $table['table_id']; ?>">
-                        <?php echo $table['table_number']; ? > (<?php echo $table['capacity']; ?> chỗ)
+                        <?php echo $table['table_number']; ?> (<?php echo $table['capacity']; ?> chỗ)
                     </option>
                     <?php endforeach; ?>
                 </select>
@@ -158,4 +158,4 @@ $tables = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 
-<? php include '../../includes/footer. php'; ?>
+<?php include '../../includes/footer.php'; ?>

@@ -6,20 +6,21 @@ requirePermission('manager');
 // Handle add ingredient
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'add') {
     try {
+        // Schema dùng reorder_level thay vì min_stock; unit_price column tên cost_price trong seed
         $query = "INSERT INTO ingredients (
-            ingredient_name, unit, current_stock, min_stock, 
-            unit_price, supplier_name, supplier_phone
+            ingredient_name, unit, current_stock, reorder_level, 
+            cost_price, supplier_name, supplier_phone
         ) VALUES (
-            :name, :unit, :current_stock, :min_stock,
-            :unit_price, :supplier_name, :supplier_phone
+            :name, :unit, :current_stock, :reorder_level,
+            :cost_price, :supplier_name, :supplier_phone
         )";
         
         $stmt = $db->prepare($query);
         $stmt->bindParam(':name', $_POST['ingredient_name']);
         $stmt->bindParam(':unit', $_POST['unit']);
         $stmt->bindParam(':current_stock', $_POST['current_stock']);
-        $stmt->bindParam(':min_stock', $_POST['min_stock']);
-        $stmt->bindParam(': unit_price', $_POST['unit_price']);
+        $stmt->bindParam(':reorder_level', $_POST['min_stock']);
+        $stmt->bindParam(':cost_price', $_POST['unit_price']);
         $stmt->bindParam(':supplier_name', $_POST['supplier_name']);
         $stmt->bindParam(':supplier_phone', $_POST['supplier_phone']);
         
@@ -35,10 +36,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
 $query = "SELECT * FROM ingredients ORDER BY ingredient_name";
 $ingredients = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
 
-// Count low stock items
+// Count low stock items using reorder_level
 $low_stock_count = 0;
 foreach ($ingredients as $item) {
-    if ($item['current_stock'] <= $item['min_stock']) {
+    if ($item['current_stock'] <= ($item['reorder_level'] ?? 0)) {
         $low_stock_count++;
     }
 }
@@ -48,10 +49,10 @@ foreach ($ingredients as $item) {
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h3">Quản lý nguyên liệu</h1>
-            <? php if ($low_stock_count > 0): ?>
+            <?php if ($low_stock_count > 0): ?>
             <div class="alert alert-warning py-2 px-3 mt-2 d-inline-block">
                 <i class="fas fa-exclamation-triangle"></i>
-                Có <? php echo $low_stock_count; ?> nguyên liệu sắp hết
+                Có <?php echo $low_stock_count; ?> nguyên liệu sắp hết
             </div>
             <?php endif; ?>
         </div>
@@ -104,32 +105,33 @@ foreach ($ingredients as $item) {
                     </thead>
                     <tbody>
                         <?php foreach ($ingredients as $index => $item): ?>
-                        <? php
-                        $is_low_stock = $item['current_stock'] <= $item['min_stock'];
-                        $total_value = $item['current_stock'] * $item['unit_price'];
+                        <?php
+                        $is_low_stock = $item['current_stock'] <= ($item['reorder_level'] ?? 0);
+                        $cost_price = $item['cost_price'] ?? 0;
+                        $total_value = $item['current_stock'] * $cost_price;
                         ?>
                         <tr class="<?php echo $is_low_stock ? 'table-warning' : ''; ?>">
                             <td><?php echo $index + 1; ?></td>
                             <td>
                                 <strong><?php echo htmlspecialchars($item['ingredient_name']); ?></strong>
                             </td>
-                            <td><? php echo $item['unit']; ?></td>
+                            <td><?php echo $item['unit']; ?></td>
                             <td>
                                 <strong><?php echo number_format($item['current_stock'], 2); ?></strong>
                             </td>
-                            <td><? php echo number_format($item['min_stock'], 2); ?></td>
-                            <td><? php echo formatMoney($item['unit_price']); ?></td>
+                            <td><?php echo number_format($item['reorder_level'] ?? 0, 2); ?></td>
+                            <td><?php echo formatMoney($cost_price); ?></td>
                             <td><strong><?php echo formatMoney($total_value); ?></strong></td>
                             <td>
-                                <?php if ($item['supplier_name']): ?>
-                                    <? php echo htmlspecialchars($item['supplier_name']); ?><br>
-                                    <small class="text-muted"><?php echo htmlspecialchars($item['supplier_phone']); ?></small>
-                                <? php else: ?>
+                                <?php if (!empty($item['supplier_name'])): ?>
+                                    <?php echo htmlspecialchars($item['supplier_name']); ?><br>
+                                    <small class="text-muted"><?php echo htmlspecialchars($item['supplier_phone'] ?? ''); ?></small>
+                                <?php else: ?>
                                     <span class="text-muted">-</span>
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <? php if ($is_low_stock): ?>
+                                <?php if ($is_low_stock): ?>
                                     <span class="badge bg-danger">
                                         <i class="fas fa-exclamation-circle"></i> Sắp hết
                                     </span>
@@ -168,7 +170,7 @@ foreach ($ingredients as $item) {
                                     <?php 
                                     $total_inventory = 0;
                                     foreach ($ingredients as $item) {
-                                        $total_inventory += $item['current_stock'] * $item['unit_price'];
+                                        $total_inventory += $item['current_stock'] * ($item['cost_price'] ?? 0);
                                     }
                                     echo formatMoney($total_inventory);
                                     ?>
@@ -274,4 +276,4 @@ function viewHistory(ingredientId) {
 }
 </script>
 
-<? php include '../../includes/footer. php'; ?>
+<?php include '../../includes/footer.php'; ?>

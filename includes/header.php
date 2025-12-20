@@ -25,10 +25,10 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/style.css">
-    <link rel="stylesheet" href="<? php echo SITE_URL; ? >/assets/css/dashboard.css">
+    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/dashboard.css">
     
-    <? php if ($current_page == 'pos'): ?>
-    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/pos. css">
+    <?php if ($current_page == 'pos'): ?>
+    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/pos.css">
     <?php endif; ?>
     
     <!-- jQuery -->
@@ -78,8 +78,8 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
                             </a>
                             <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                 <div class="dropdown-header">
-                                    <strong><?php echo htmlspecialchars($current_user['full_name']); ?></strong><br>
-                                    <small class="text-muted"><?php echo ucfirst($current_user['role']); ?></small>
+                                    <strong><?php echo htmlspecialchars($current_user['full_name'] ?? ''); ?></strong><br>
+                                    <small class="text-muted"><?php echo isset($current_user['user_role']) ? ucfirst($current_user['user_role']) : ''; ?></small>
                                 </div>
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="<?php echo SITE_URL; ?>/modules/users/profile.php">
@@ -100,4 +100,4 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
             
             <!-- Page Content -->
             <div class="content-wrapper">
-                <? php displayAlert(); ?>
+                <?php displayAlert(); ?>

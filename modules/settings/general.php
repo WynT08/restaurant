@@ -10,28 +10,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if ($key != 'submit') {
                 $query = "UPDATE settings SET setting_value = :value WHERE setting_key = :key";
                 $stmt = $db->prepare($query);
-                $stmt->bindParam(': value', $value);
+                $stmt->bindParam(':value', $value);
                 $stmt->bindParam(':key', $key);
                 $stmt->execute();
             }
         }
-        
         setAlert('Cập nhật cài đặt thành công', 'success');
-        header("Location: general. php");
+        header("Location: general.php");
         exit();
-        
     } catch (Exception $e) {
-        setAlert('Có lỗi xảy ra: ' . $e->getMessage(), 'danger');
+        setAlert('Có lỗi xảy ra (bảng settings chưa tồn tại?): ' . $e->getMessage(), 'danger');
     }
 }
 
-// Get all settings
-$query = "SELECT * FROM settings ORDER BY setting_key";
-$settings_result = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
-
+// Get all settings (bảng settings không có trong schema seed, fallback rỗng)
 $settings = [];
-foreach ($settings_result as $setting) {
-    $settings[$setting['setting_key']] = $setting['setting_value'];
+try {
+    $query = "SELECT * FROM settings ORDER BY setting_key";
+    $settings_result = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($settings_result as $setting) {
+        $settings[$setting['setting_key']] = $setting['setting_value'];
+    }
+} catch (Exception $e) {
+    setAlert('Bảng settings chưa được tạo, dùng giá trị mặc định.', 'warning');
 }
 ?>
 

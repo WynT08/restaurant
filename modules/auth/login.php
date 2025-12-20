@@ -1,5 +1,5 @@
-<? php
-require_once '../../config/config. php';
+<?php
+require_once '../../config/config.php';
 require_once '../../config/database.php';
 
 // Redirect if already logged in
@@ -11,35 +11,35 @@ if (isLoggedIn()) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = sanitize($_POST['username']);
+    $email = sanitize($_POST['email']);
     $password = $_POST['password'];
     
-    if (empty($username) || empty($password)) {
+    if (empty($email) || empty($password)) {
         $error = 'Vui lòng nhập đầy đủ thông tin';
     } else {
         $database = new Database();
         $db = $database->getConnection();
         
-        $query = "SELECT * FROM users WHERE username = :username AND status = 'active'";
+        $query = "SELECT * FROM users WHERE email = :email AND status = 'active'";
         $stmt = $db->prepare($query);
-        $stmt->bindParam(':username', $username);
+        $stmt->bindParam(':email', $email);
         $stmt->execute();
         
         if ($stmt->rowCount() > 0) {
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if (password_verify($password, $user['password'])) {
+            if (password_verify($password, $user['password_hash'])) {
                 // Set session
                 $_SESSION['user_id'] = $user['user_id'];
-                $_SESSION['username'] = $user['username'];
+                $_SESSION['username'] = $user['email'];
                 $_SESSION['full_name'] = $user['full_name'];
-                $_SESSION['user_role'] = $user['role'];
+                $_SESSION['user_role'] = $user['user_role'];
                 
                 // Log activity
                 logActivity($db, $user['user_id'], 'login', 'User logged in');
                 
                 // Redirect to dashboard
-                header("Location: " . SITE_URL . "/modules/dashboard/index. php");
+                header("Location: " . SITE_URL . "/modules/dashboard/index.php");
                 exit();
             } else {
                 $error = 'Mật khẩu không đúng';
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 ?>
-<! DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -73,13 +73,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             width: 100%;
             padding: 20px;
         }
-        . login-card {
+        .login-card {
             background: white;
             border-radius: 15px;
             box-shadow:  0 10px 40px rgba(0,0,0,0.2);
             padding: 40px;
         }
-        . login-logo {
+        .login-logo {
             text-align: center;
             margin-bottom: 30px;
         }
@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="login-card">
             <div class="login-logo">
                 <i class="fas fa-utensils"></i>
-                <h3><? php echo SITE_TITLE; ?></h3>
+                <h3><?php echo SITE_TITLE; ?></h3>
                 <p class="text-muted">Đăng nhập hệ thống</p>
             </div>
             
@@ -123,10 +123,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             
             <form method="POST" action="">
                 <div class="mb-3">
-                    <label class="form-label">Tên đăng nhập</label>
+                    <label class="form-label">Email</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-user"></i></span>
-                        <input type="text" class="form-control" name="username" required autofocus>
+                        <input type="email" class="form-control" name="email" required autofocus>
                     </div>
                 </div>
                 
@@ -149,11 +149,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </form>
             
             <div class="text-center mt-3">
-                <small class="text-muted">Demo:  admin/123456</small>
+                <small class="text-muted">Demo: admin@example.com / password</small>
             </div>
         </div>
     </div>
     
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle. min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -32,7 +32,7 @@ $status_filter = isset($_GET['status']) ? $_GET['status'] :  'all';
 $query = "SELECT * FROM users WHERE 1=1";
 
 if ($role_filter != 'all') {
-    $query .= " AND role = : role";
+    $query .= " AND user_role = :role";
 }
 
 if ($status_filter != 'all') {
@@ -60,12 +60,14 @@ $role_counts = [
     'manager' => 0,
     'waiter' => 0,
     'chef' => 0,
-    'cashier' => 0
+    'cashier' => 0,
+    'staff' => 0
 ];
 
 foreach ($users as $user) {
-    if (isset($role_counts[$user['role']])) {
-        $role_counts[$user['role']]++;
+    $role_key = $user['user_role'] ?? 'staff';
+    if (isset($role_counts[$role_key])) {
+        $role_counts[$role_key]++;
     }
 }
 ?>
@@ -115,7 +117,7 @@ foreach ($users as $user) {
         <div class="col-md-2">
             <div class="card border-info">
                 <div class="card-body text-center">
-                    <h3 class="text-info mb-0"><?php echo $role_counts['cashier']; ? ></h3>
+                    <h3 class="text-info mb-0"><?php echo $role_counts['cashier']; ?></h3>
                     <small class="text-muted">Thu ngân</small>
                 </div>
             </div>
@@ -146,7 +148,7 @@ foreach ($users as $user) {
                 </div>
                 <div class="col-md-3">
                     <select id="status-filter" class="form-select" onchange="filterStaff()">
-                        <option value="all" <? php echo $status_filter == 'all' ? 'selected' : ''; ?>>Tất cả trạng thái</option>
+                        <option value="all" <?php echo $status_filter == 'all' ? 'selected' : ''; ?>>Tất cả trạng thái</option>
                         <option value="active" <?php echo $status_filter == 'active' ? 'selected' : ''; ?>>Đang làm</option>
                         <option value="inactive" <?php echo $status_filter == 'inactive' ? 'selected' : ''; ?>>Nghỉ việc</option>
                     </select>
@@ -180,32 +182,34 @@ foreach ($users as $user) {
                         <?php foreach ($users as $user): ?>
                         <tr>
                             <td>
-                                <? php if ($user['avatar']): ?>
+                                <?php if ($user['avatar']): ?>
                                     <img src="<?php echo SITE_URL .  '/uploads/avatars/' . $user['avatar']; ?>" 
                                          class="rounded-circle" width="50" height="50" style="object-fit: cover;">
                                 <?php else: ?>
                                     <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
                                          style="width: 50px; height: 50px; font-size: 20px; font-weight: bold;">
-                                        <? php echo strtoupper(substr($user['full_name'], 0, 1)); ?>
+                                        <?php echo strtoupper(substr($user['full_name'], 0, 1)); ?>
                                     </div>
                                 <?php endif; ?>
                             </td>
                             <td>
                                 <strong><?php echo htmlspecialchars($user['full_name']); ?></strong>
                             </td>
-                            <td><? php echo htmlspecialchars($user['username']); ?></td>
-                            <td><?php echo htmlspecialchars($user['email']); ?></td>
+                            <td><?php echo htmlspecialchars($user['username'] ?? ($user['email'] ?? '')); ?></td>
+                            <td><?php echo htmlspecialchars($user['email'] ?? ''); ?></td>
                             <td><?php echo htmlspecialchars($user['phone']); ?></td>
                             <td>
-                                <? php
+                                <?php
                                 $role_badges = [
                                     'admin' => ['danger', 'Admin'],
                                     'manager' => ['primary', 'Manager'],
                                     'waiter' => ['success', 'Phục vụ'],
                                     'chef' => ['warning', 'Đầu bếp'],
-                                    'cashier' => ['info', 'Thu ngân']
+                                    'cashier' => ['info', 'Thu ngân'],
+                                    'staff' => ['secondary', 'Staff']
                                 ];
-                                $badge = $role_badges[$user['role']];
+                                $role_key = $user['user_role'] ?? 'staff';
+                                $badge = $role_badges[$role_key] ?? ['secondary', ucfirst($role_key)];
                                 ?>
                                 <span class="badge bg-<?php echo $badge[0]; ?>">
                                     <?php echo $badge[1]; ?>
@@ -229,14 +233,14 @@ foreach ($users as $user) {
                                        class="btn btn-primary" title="Sửa">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <? php if ($user['user_id'] != $_SESSION['user_id']): ?>
-                                    <a href="? delete=<?php echo $user['user_id']; ?>" 
+                                    <?php if ($user['user_id'] != $_SESSION['user_id']): ?>
+                                    <a href="?delete=<?php echo $user['user_id']; ?>" 
                                        class="btn btn-danger" 
                                        onclick="return confirm('Xóa nhân viên này?')" 
                                        title="Xóa">
                                         <i class="fas fa-trash"></i>
                                     </a>
-                                    <? php endif; ?>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>

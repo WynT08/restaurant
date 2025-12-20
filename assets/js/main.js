@@ -1,17 +1,33 @@
 // Main JavaScript for Restaurant Management System
 
 $(document).ready(function() {
-    // Sidebar toggle
+    var $sidebar = $('#sidebar');
+    var $body = $('body');
+    
+    // Sidebar toggle for desktop and mobile
     $('#sidebarToggle').on('click', function() {
-        $('#sidebar').toggleClass('show');
+        if ($(window).width() < 768) {
+            $sidebar.toggleClass('show');
+        } else {
+            $body.toggleClass('sidebar-collapsed');
+        }
     });
     
     // Close sidebar when clicking outside on mobile
     $(document).on('click', function(e) {
         if ($(window).width() < 768) {
             if (! $(e.target).closest('#sidebar, #sidebarToggle').length) {
-                $('#sidebar').removeClass('show');
+                $sidebar.removeClass('show');
             }
+        }
+    });
+    
+    // Reset sidebar state on resize
+    $(window).on('resize', function() {
+        if ($(this).width() >= 768) {
+            $sidebar.removeClass('show');
+        } else {
+            $body.removeClass('sidebar-collapsed');
         }
     });
     

@@ -24,9 +24,9 @@ $to_date = isset($_GET['to_date']) ? $_GET['to_date'] : date('Y-m-d');
 $type_filter = isset($_GET['type']) ? $_GET['type'] : 'all';
 
 // Build query
-$query = "SELECT e.*, u.full_name as recorded_by_name
+// Schema seed không có cột recorded_by, nên bỏ JOIN và default tên ghi nhận
+$query = "SELECT e.*, NULL as recorded_by_name
           FROM expenses e
-          LEFT JOIN users u ON e.recorded_by = u.user_id
           WHERE DATE(e.expense_date) BETWEEN :from_date AND :to_date";
 
 if ($type_filter != 'all') {
@@ -74,7 +74,7 @@ foreach ($expenses as $expense) {
             <form method="GET" class="row g-3">
                 <div class="col-md-3">
                     <label class="form-label">Từ ngày</label>
-                    <input type="date" name="from_date" class="form-control" value="<? php echo $from_date; ?>">
+                    <input type="date" name="from_date" class="form-control" value="<?php echo $from_date; ?>">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Đến ngày</label>
@@ -158,9 +158,9 @@ foreach ($expenses as $expense) {
                     <tbody>
                         <?php foreach ($expenses as $expense): ?>
                         <tr>
-                            <td><? php echo formatDate($expense['expense_date']); ?></td>
+                            <td><?php echo formatDate($expense['expense_date']); ?></td>
                             <td>
-                                <? php
+                                <?php
                                 $type_labels = [
                                     'salary' => ['primary', 'Lương'],
                                     'utilities' => ['warning', 'Điện nước'],
@@ -177,20 +177,20 @@ foreach ($expenses as $expense) {
                             <td><?php echo htmlspecialchars($expense['description']); ?></td>
                             <td><strong class="text-danger"><?php echo formatMoney($expense['amount']); ?></strong></td>
                             <td>
-                                <? php
+                                <?php
                                 $payment_icons = [
                                     'cash' => 'fa-money-bill',
                                     'card' => 'fa-credit-card',
                                     'bank_transfer' => 'fa-exchange-alt'
                                 ];
                                 ?>
-                                <i class="fas <? php echo $payment_icons[$expense['payment_method']]; ?>"></i>
+                                <i class="fas <?php echo $payment_icons[$expense['payment_method']]; ?>"></i>
                                 <?php echo ucfirst($expense['payment_method']); ?>
                             </td>
-                            <td><?php echo htmlspecialchars($expense['recorded_by_name']); ?></td>
+                            <td><?php echo htmlspecialchars($expense['recorded_by_name'] ?? ''); ?></td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <? php if ($expense['receipt_image']): ?>
+                                    <?php if ($expense['receipt_image']): ?>
                                     <a href="<?php echo SITE_URL . '/uploads/receipts/' . $expense['receipt_image']; ?>" 
                                        target="_blank" class="btn btn-info" title="Xem hóa đơn">
                                         <i class="fas fa-file-image"></i>
@@ -200,7 +200,7 @@ foreach ($expenses as $expense) {
                                        class="btn btn-primary" title="Sửa">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="? delete=<?php echo $expense['expense_id']; ?>" 
+                                    <a href="?delete=<?php echo $expense['expense_id']; ?>" 
                                        class="btn btn-danger" 
                                        onclick="return confirm('Xóa chi phí này?')" 
                                        title="Xóa">
@@ -214,7 +214,7 @@ foreach ($expenses as $expense) {
                     <tfoot class="table-danger">
                         <tr>
                             <th colspan="3" class="text-end">Tổng cộng: </th>
-                            <th colspan="4"><strong><? php echo formatMoney($grand_total); ?></strong></th>
+                            <th colspan="4"><strong><?php echo formatMoney($grand_total); ?></strong></th>
                         </tr>
                     </tfoot>
                 </table>
@@ -223,4 +223,4 @@ foreach ($expenses as $expense) {
     </div>
 </div>
 
-<? php include '../../includes/footer. php'; ?>
+<?php include '../../includes/footer.php'; ?>

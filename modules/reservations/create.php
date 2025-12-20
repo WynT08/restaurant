@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             table_id, reservation_date, reservation_time,
             number_of_guests, special_requests, status, created_by
         ) VALUES (
-            :customer_name, : customer_phone, :customer_email,
+            :customer_name, :customer_phone, :customer_email,
             :table_id, :reservation_date, :reservation_time,
             :number_of_guests, :special_requests, 'pending', :created_by
         )";
@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bindParam(':customer_email', $_POST['customer_email']);
         $stmt->bindParam(':table_id', $_POST['table_id']);
         $stmt->bindParam(':reservation_date', $_POST['reservation_date']);
-        $stmt->bindParam(': reservation_time', $_POST['reservation_time']);
+        $stmt->bindParam(':reservation_time', $_POST['reservation_time']);
         $stmt->bindParam(':number_of_guests', $_POST['number_of_guests']);
         $stmt->bindParam(':special_requests', $_POST['special_requests']);
         $stmt->bindParam(':created_by', $_SESSION['user_id']);
@@ -103,10 +103,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     <option value="">-- Chọn sau --</option>
                                     <?php foreach ($tables as $table): ?>
                                     <option value="<?php echo $table['table_id']; ?>">
-                                        <?php echo $table['table_number']; ? > 
-                                        (<?php echo $table['capacity']; ?> chỗ - <? php echo ucfirst($table['location']); ?>)
+                                        <?php echo $table['table_number']; ?> 
+                                        (<?php echo $table['capacity']; ?> chỗ - <?php echo ucfirst($table['location']); ?>)
                                     </option>
-                                    <? php endforeach; ?>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                         </div>
@@ -146,4 +146,4 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </div>
 </div>
 
-<? php include '../../includes/footer. php'; ?>
+<?php include '../../includes/footer.php'; ?>

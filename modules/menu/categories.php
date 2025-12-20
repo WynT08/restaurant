@@ -51,11 +51,11 @@ $categories = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
                         </tr>
                     </thead>
                     <tbody>
-                        <? php foreach ($categories as $cat): ?>
+                        <?php foreach ($categories as $cat): ?>
                         <tr>
                             <td><?php echo $cat['display_order']; ?></td>
                             <td>
-                                <? php if ($cat['image']): ?>
+                                <?php if ($cat['image']): ?>
                                     <img src="<?php echo SITE_URL . '/uploads/categories/' . $cat['image']; ?>" 
                                          alt="" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
                                 <?php else: ?>
@@ -66,10 +66,14 @@ $categories = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
                                 <?php endif; ?>
                             </td>
                             <td><strong><?php echo htmlspecialchars($cat['category_name']); ?></strong></td>
-                            <td><? php echo htmlspecialchars(substr($cat['description'] ?? '', 0, 50)); ? ></td>
+                            <td><?php echo htmlspecialchars(substr($cat['description'] ?? '', 0, 50)); ?></td>
                             <td><span class="badge bg-info"><?php echo $cat['item_count']; ?> món</span></td>
                             <td>
-                                <? php if ($cat['status'] == 'active'): ?>
+                                <?php 
+                                // Bảng categories không có cột status trong schema seed; mặc định xem là active
+                                $cat_status = $cat['status'] ?? 'active';
+                                ?>
+                                <?php if ($cat_status === 'active'): ?>
                                     <span class="badge bg-success">Hoạt động</span>
                                 <?php else: ?>
                                     <span class="badge bg-secondary">Tạm ẩn</span>
@@ -79,7 +83,7 @@ $categories = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
                                 <button class="btn btn-sm btn-info" onclick="editCategory(<?php echo $cat['category_id']; ?>)">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <a href="? delete=<?php echo $cat['category_id']; ?>" 
+                                <a href="?delete=<?php echo $cat['category_id']; ?>" 
                                    class="btn btn-sm btn-danger" 
                                    onclick="return confirm('Xóa danh mục này? ')">
                                     <i class="fas fa-trash"></i>
@@ -141,4 +145,4 @@ $categories = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 
-<? php include '../../includes/footer. php'; ?>
+<?php include '../../includes/footer.php'; ?>

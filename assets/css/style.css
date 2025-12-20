@@ -40,6 +40,11 @@ body {
     z-index: 1000;
 }
 
+/* Collapsed sidebar for desktop */
+body.sidebar-collapsed .sidebar {
+    margin-left: calc(-1 * var(--sidebar-width));
+}
+
 .sidebar-header {
     padding: 20px;
     text-align: center;
@@ -100,6 +105,10 @@ body {
     flex: 1;
     margin-left: var(--sidebar-width);
     transition: all 0.3s;
+}
+
+body.sidebar-collapsed .main-content {
+    margin-left: 0;
 }
 
 .content-wrapper {

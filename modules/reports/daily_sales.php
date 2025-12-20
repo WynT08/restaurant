@@ -1,6 +1,6 @@
 <?php
 $page_title = 'Báo cáo doanh thu';
-include '../../includes/header. php';
+include '../../includes/header.php';
 requirePermission('manager');
 
 // Get date range
@@ -43,21 +43,22 @@ foreach ($sales_data as $row) {
     $totals['discount'] += $row['total_discount'];
 }
 
-// Get payment methods breakdown
+// Get payment methods breakdown (schema payments table holds method)
 $query = "SELECT 
-            payment_method,
-            COUNT(*) as count,
-            SUM(total_amount) as total
-          FROM orders
-          WHERE DATE(created_at) BETWEEN :from_date AND :to_date
-          AND payment_status = 'paid'
-          GROUP BY payment_method";
+                        p.payment_method,
+                        COUNT(*) as count,
+                        SUM(p.amount) as total
+                    FROM payments p
+                    JOIN orders o ON p.order_id = o.order_id
+                    WHERE DATE(o.created_at) BETWEEN :from_date AND :to_date
+                    AND o.payment_status = 'paid'
+                    GROUP BY p.payment_method";
 
 $stmt = $db->prepare($query);
 $stmt->bindParam(':from_date', $from_date);
 $stmt->bindParam(':to_date', $to_date);
 $stmt->execute();
-$payment_methods = $stmt->fetchAll(PDO:: FETCH_ASSOC);
+$payment_methods = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get best selling items
 $query = "SELECT 
@@ -99,8 +100,8 @@ $best_sellers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <form method="GET" class="row align-items-end g-3">
                 <div class="col-md-3">
                     <label class="form-label">Từ ngày</label>
-                    <input type="date" name="from_date" class="form-control" 
-                           value="<?php echo $from_date; ? >" required>
+                          <input type="date" name="from_date" class="form-control" 
+                              value="<?php echo $from_date; ?>" required>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Đến ngày</label>
@@ -171,7 +172,7 @@ $best_sellers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1">Tổng giảm giá</p>
-                            <h3 class="mb-0 text-warning"><? php echo formatMoney($totals['discount']); ?></h3>
+                            <h3 class="mb-0 text-warning"><?php echo formatMoney($totals['discount']); ?></h3>
                         </div>
                         <i class="fas fa-tag fa-2x text-warning opacity-50"></i>
                     </div>
@@ -224,7 +225,7 @@ $best_sellers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <tfoot class="table-info">
                                 <tr>
                                     <th>Tổng cộng</th>
-                                    <th><? php echo $totals['orders']; ?></th>
+                                    <th><?php echo $totals['orders']; ?></th>
                                     <th><strong><?php echo formatMoney($totals['revenue']); ?></strong></th>
                                     <th><?php echo formatMoney($totals['tax']); ?></th>
                                     <th><?php echo formatMoney($totals['discount']); ?></th>
@@ -247,7 +248,7 @@ $best_sellers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="card-body">
                     <canvas id="paymentChart" height="200"></canvas>
                     <div class="mt-3">
-                        <? php 
+                        <?php 
                         $payment_labels = [
                             'cash' => 'Tiền mặt',
                             'card' => 'Thẻ',
@@ -257,7 +258,7 @@ $best_sellers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         foreach ($payment_methods as $pm): 
                         ?>
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span><?php echo $payment_labels[$pm['payment_method']] ??  $pm['payment_method']; ? ></span>
+                            <span><?php echo $payment_labels[$pm['payment_method']] ?? $pm['payment_method']; ?></span>
                             <div>
                                 <span class="badge bg-primary"><?php echo $pm['count']; ?> đơn</span>
                                 <strong class="ms-2"><?php echo formatMoney($pm['total']); ?></strong>
@@ -283,7 +284,7 @@ $best_sellers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <strong><?php echo htmlspecialchars($item['item_name']); ?></strong>
                                     <br>
                                     <small class="text-muted">
-                                        <?php echo $item['total_quantity']; ? > phần | 
+                                        <?php echo $item['total_quantity']; ?> phần | 
                                         <?php echo formatMoney($item['total_revenue']); ?>
                                     </small>
                                 </div>
@@ -371,11 +372,11 @@ function setToday() {
 }
 
 function exportToExcel() {
-    window.location.href = 'export_excel.php? from_date=<?php echo $from_date; ?>&to_date=<?php echo $to_date; ?>';
+    window.location.href = 'export_excel.php?from_date=<?php echo $from_date; ?>&to_date=<?php echo $to_date; ?>';
 }
 
 function exportToPDF() {
-    window.location. href = 'export_pdf. php?from_date=<?php echo $from_date; ?>&to_date=<?php echo $to_date; ?>';
+    window.location.href = 'export_pdf.php?from_date=<?php echo $from_date; ?>&to_date=<?php echo $to_date; ?>';
 }
 </script>
 

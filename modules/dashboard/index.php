@@ -50,8 +50,9 @@ $stmt->execute();
 $recent_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Low stock alerts
+// Schema uses reorder_level to trigger low-stock warning (no min_stock column)
 $query = "SELECT * FROM ingredients 
-          WHERE current_stock <= min_stock 
+          WHERE current_stock <= reorder_level 
           ORDER BY current_stock ASC 
           LIMIT 5";
 $stmt = $db->prepare($query);
@@ -94,7 +95,7 @@ $low_stock = $stmt->fetchAll(PDO:: FETCH_ASSOC);
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1">Đơn hàng hôm nay</p>
-                            <h3 class="mb-0"><?php echo $stats['today_orders']; ? ></h3>
+                            <h3 class="mb-0"><?php echo $stats['today_orders']; ?></h3>
                         </div>
                         <div class="icon-box bg-success">
                             <i class="fas fa-receipt text-white"></i>
@@ -160,29 +161,30 @@ $low_stock = $stmt->fetchAll(PDO:: FETCH_ASSOC);
                             <tbody>
                                 <?php foreach ($recent_orders as $order): ?>
                                 <tr>
-                                    <td><strong><? php echo $order['order_number']; ?></strong></td>
-                                    <td><?php echo $order['table_number'] ??  'N/A'; ?></td>
-                                    <td><? php echo htmlspecialchars($order['waiter_name'] ?? 'N/A'); ?></td>
+                                    <td><strong><?php echo $order['order_number']; ?></strong></td>
+                                    <td><?php echo $order['table_number'] ?? 'N/A'; ?></td>
+                                    <td><?php echo htmlspecialchars($order['waiter_name'] ?? 'N/A'); ?></td>
                                     <td><?php echo formatMoney($order['total_amount']); ?></td>
                                     <td>
-                                        <? php
+                                        <?php
                                         $status_class = [
                                             'pending' => 'warning',
-                                            'confirmed' => 'info',
                                             'preparing' => 'primary',
-                                            'ready' => 'success',
-                                            'completed' => 'secondary'
+                                            'served' => 'success',
+                                            'cancelled' => 'secondary'
                                         ];
                                         $status_text = [
-                                            'pending' => 'Chờ xác nhận',
-                                            'confirmed' => 'Đã xác nhận',
+                                            'pending' => 'Chờ xử lý',
                                             'preparing' => 'Đang làm',
-                                            'ready' => 'Sẵn sàng',
-                                            'completed' => 'Hoàn thành'
+                                            'served' => 'Đã phục vụ',
+                                            'cancelled' => 'Đã hủy'
                                         ];
+                                        $order_status = $order['order_status'];
+                                        $badge_class = $status_class[$order_status] ?? 'secondary';
+                                        $badge_text = $status_text[$order_status] ?? ucfirst($order_status);
                                         ?>
-                                        <span class="badge bg-<?php echo $status_class[$order['order_status']]; ?>">
-                                            <? php echo $status_text[$order['order_status']]; ?>
+                                        <span class="badge bg-<?php echo $badge_class; ?>">
+                                            <?php echo $badge_text; ?>
                                         </span>
                                     </td>
                                     <td><?php echo formatDateTime($order['created_at']); ?></td>
@@ -202,7 +204,7 @@ $low_stock = $stmt->fetchAll(PDO:: FETCH_ASSOC);
                     <h5 class="mb-0">Cảnh báo tồn kho</h5>
                 </div>
                 <div class="card-body">
-                    <? php if (count($low_stock) > 0): ?>
+                    <?php if (count($low_stock) > 0): ?>
                         <div class="list-group list-group-flush">
                             <?php foreach ($low_stock as $item): ?>
                             <div class="list-group-item px-0">
@@ -211,10 +213,10 @@ $low_stock = $stmt->fetchAll(PDO:: FETCH_ASSOC);
                                         <h6 class="mb-1"><?php echo htmlspecialchars($item['ingredient_name']); ?></h6>
                                         <small class="text-danger">
                                             <i class="fas fa-exclamation-triangle"></i>
-                                            Còn <?php echo $item['current_stock']; ?> <? php echo $item['unit']; ?>
+                                            Còn <?php echo $item['current_stock']; ?> <?php echo $item['unit']; ?>
                                         </small>
                                     </div>
-                                    <a href="<?php echo SITE_URL; ?>/modules/inventory/stock_in. php?id=<?php echo $item['ingredient_id']; ?>" 
+                                    <a href="<?php echo SITE_URL; ?>/modules/inventory/stock_in.php?id=<?php echo $item['ingredient_id']; ?>" 
                                        class="btn btn-sm btn-outline-primary">
                                         Nhập kho
                                     </a>
@@ -235,7 +237,7 @@ $low_stock = $stmt->fetchAll(PDO:: FETCH_ASSOC);
 </div>
 
 <style>
-. icon-box {
+.icon-box {
     width: 60px;
     height: 60px;
     border-radius:  10px;
@@ -243,7 +245,7 @@ $low_stock = $stmt->fetchAll(PDO:: FETCH_ASSOC);
     align-items: center;
     justify-content: center;
 }
-. icon-box i {
+.icon-box i {
     font-size: 24px;
 }
 </style>

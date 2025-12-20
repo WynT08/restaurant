@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
                   VALUES (:table_number, :table_name, :capacity, :location, 'available')";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':table_number', $_POST['table_number']);
-        $stmt->bindParam(': table_name', $_POST['table_name']);
+        $stmt->bindParam(':table_name', $_POST['table_name']);
         $stmt->bindParam(':capacity', $_POST['capacity']);
         $stmt->bindParam(':location', $_POST['location']);
         
@@ -59,7 +59,7 @@ foreach ($tables as $table) {
         <div class="col-md-3">
             <div class="card border-danger">
                 <div class="card-body text-center">
-                    <h2 class="text-danger mb-0"><?php echo $stats['occupied']; ? ></h2>
+                    <h2 class="text-danger mb-0"><?php echo $stats['occupied']; ?></h2>
                     <p class="text-muted mb-0">Đang sử dụng</p>
                 </div>
             </div>
@@ -75,7 +75,7 @@ foreach ($tables as $table) {
         <div class="col-md-3">
             <div class="card border-secondary">
                 <div class="card-body text-center">
-                    <h2 class="text-secondary mb-0"><?php echo $stats['maintenance']; ? ></h2>
+                    <h2 class="text-secondary mb-0"><?php echo $stats['maintenance']; ?></h2>
                     <p class="text-muted mb-0">Bảo trì</p>
                 </div>
             </div>
@@ -111,7 +111,7 @@ foreach ($tables as $table) {
     <!-- Tables Grid -->
     <div class="row g-3" id="tables-grid">
         <?php foreach ($tables as $table): ?>
-        <? php
+        <?php
         $status_classes = [
             'available' => 'success',
             'occupied' => 'danger',
@@ -140,19 +140,19 @@ foreach ($tables as $table) {
                         <i class="fas fa-table fa-2x text-<?php echo $status_classes[$table['status']]; ?>"></i>
                     </div>
                     <h5 class="mb-1"><?php echo htmlspecialchars($table['table_number']); ?></h5>
-                    <? php if ($table['table_name']): ?>
+                    <?php if ($table['table_name']): ?>
                     <small class="text-muted d-block"><?php echo htmlspecialchars($table['table_name']); ?></small>
                     <?php endif; ?>
                     <div class="my-2">
                         <span class="badge bg-light text-dark">
-                            <i class="fas fa-users"></i> <?php echo $table['capacity']; ? > chỗ
+                            <i class="fas fa-users"></i> <?php echo $table['capacity']; ?> chỗ
                         </span>
                         <span class="badge bg-light text-dark">
                             <i class="fas fa-map-marker-alt"></i> <?php echo ucfirst($table['location']); ?>
                         </span>
                     </div>
-                    <span class="badge bg-<? php echo $status_classes[$table['status']]; ? > w-100">
-                        <i class="fas <? php echo $status_icons[$table['status']]; ?>"></i>
+                    <span class="badge bg-<?php echo $status_classes[$table['status']]; ?> w-100">
+                        <i class="fas <?php echo $status_icons[$table['status']]; ?>"></i>
                         <?php echo $status_text[$table['status']]; ?>
                     </span>
                     

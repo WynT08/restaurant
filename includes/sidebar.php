@@ -1,17 +1,17 @@
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <h3><i class="fas fa-utensils"></i> <? php echo SITE_TITLE; ?></h3>
+        <h3><i class="fas fa-utensils"></i> <?php echo SITE_TITLE; ?></h3>
     </div>
     
     <ul class="sidebar-menu">
-        <li class="<? php echo $current_page == 'index' ? 'active' : ''; ?>">
-            <a href="<?php echo SITE_URL; ?>/modules/dashboard/index. php">
+        <li class="<?php echo $current_page == 'index' ? 'active' : ''; ?>">
+            <a href="<?php echo SITE_URL; ?>/modules/dashboard/index.php">
                 <i class="fas fa-home"></i>
                 <span>Dashboard</span>
             </a>
         </li>
         
-        <? php if (hasPermission('staff')): ?>
+        <?php if (hasPermission('staff')): ?>
         <li class="<?php echo in_array($current_page, ['pos', 'order_list', 'order_details']) ? 'active' : ''; ?>">
             <a href="<?php echo SITE_URL; ?>/modules/orders/pos.php">
                 <i class="fas fa-cash-register"></i>
@@ -32,7 +32,7 @@
                 <span>Quản lý bàn</span>
             </a>
         </li>
-        <? php endif; ?>
+        <?php endif; ?>
         
         <?php if (hasPermission('manager')): ?>
         <li class="menu-header">Quản lý</li>
@@ -57,23 +57,23 @@
                 <span>Chi phí</span>
             </a>
         </li>
-        <? php endif; ?>
+        <?php endif; ?>
         
         <?php if (hasPermission('manager')): ?>
         <li class="menu-header">Báo cáo</li>
         
-        <li class="<? php echo strpos($_SERVER['REQUEST_URI'], 'reports') !== false ? 'active' : ''; ?>">
+        <li class="<?php echo strpos($_SERVER['REQUEST_URI'], 'reports') !== false ? 'active' : ''; ?>">
             <a href="<?php echo SITE_URL; ?>/modules/reports/daily_sales.php">
                 <i class="fas fa-chart-line"></i>
                 <span>Doanh thu</span>
             </a>
         </li>
-        <? php endif; ?>
+        <?php endif; ?>
         
-        <? php if (hasPermission('admin')): ?>
+        <?php if (hasPermission('admin')): ?>
         <li class="menu-header">Hệ thống</li>
         
-        <li class="<? php echo strpos($_SERVER['REQUEST_URI'], 'users') !== false ? 'active' : ''; ?>">
+        <li class="<?php echo strpos($_SERVER['REQUEST_URI'], 'users') !== false ? 'active' : ''; ?>">
             <a href="<?php echo SITE_URL; ?>/modules/users/manage_staff.php">
                 <i class="fas fa-users"></i>
                 <span>Nhân viên</span>

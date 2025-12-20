@@ -47,15 +47,15 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="row align-items-center">
                 <div class="col-md-3">
                     <label class="form-label">Ngày</label>
-                    <input type="date" id="date-filter" class="form-control" 
-                           value="<?php echo $date_filter; ? >" 
-                           onchange="filterReservations()">
+                          <input type="date" id="date-filter" class="form-control" 
+                              value="<?php echo $date_filter; ?>" 
+                              onchange="filterReservations()">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Trạng thái</label>
                     <select id="status-filter" class="form-select" onchange="filterReservations()">
                         <option value="all" <?php echo $status_filter == 'all' ? 'selected' : ''; ?>>Tất cả</option>
-                        <option value="pending" <? php echo $status_filter == 'pending' ? 'selected' : ''; ?>>Chờ xác nhận</option>
+                        <option value="pending" <?php echo $status_filter == 'pending' ? 'selected' : ''; ?>>Chờ xác nhận</option>
                         <option value="confirmed" <?php echo $status_filter == 'confirmed' ? 'selected' : ''; ?>>Đã xác nhận</option>
                         <option value="completed" <?php echo $status_filter == 'completed' ? 'selected' : ''; ?>>Hoàn thành</option>
                         <option value="cancelled" <?php echo $status_filter == 'cancelled' ? 'selected' :  ''; ?>>Đã hủy</option>
@@ -73,7 +73,7 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     <!-- Statistics -->
     <div class="row g-3 mb-4">
-        <? php
+        <?php
         $stats = [
             'total' => 0,
             'pending' => 0,
@@ -124,7 +124,7 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <!-- Reservations List -->
     <div class="card">
         <div class="card-body">
-            <? php if (count($reservations) > 0): ?>
+            <?php if (count($reservations) > 0): ?>
             <div class="table-responsive">
                 <table class="table table-hover" id="reservations-table">
                     <thead>
@@ -143,17 +143,17 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <?php foreach ($reservations as $res): ?>
                         <tr>
                             <td><strong>#<?php echo $res['reservation_id']; ?></strong></td>
-                            <td><? php echo htmlspecialchars($res['customer_name']); ?></td>
+                            <td><?php echo htmlspecialchars($res['customer_name']); ?></td>
                             <td>
-                                <i class="fas fa-phone"></i> <?php echo $res['customer_phone']; ? ><br>
-                                <? php if ($res['customer_email']): ?>
+                                <i class="fas fa-phone"></i> <?php echo $res['customer_phone']; ?><br>
+                                <?php if ($res['customer_email']): ?>
                                 <small class="text-muted">
                                     <i class="fas fa-envelope"></i> <?php echo $res['customer_email']; ?>
                                 </small>
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <? php if ($res['table_number']): ?>
+                                <?php if ($res['table_number']): ?>
                                     <span class="badge bg-info"><?php echo $res['table_number']; ?></span>
                                 <?php else: ?>
                                     <span class="text-muted">Chưa chọn</span>
@@ -161,13 +161,13 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </td>
                             <td>
                                 <?php echo formatDate($res['reservation_date']); ?><br>
-                                <strong><? php echo date('H:i', strtotime($res['reservation_time'])); ?></strong>
+                                <strong><?php echo date('H:i', strtotime($res['reservation_time'])); ?></strong>
                             </td>
                             <td>
                                 <i class="fas fa-users"></i> <?php echo $res['number_of_guests']; ?> người
                             </td>
                             <td>
-                                <? php
+                                <?php
                                 $status_badges = [
                                     'pending' => ['warning', 'Chờ xác nhận'],
                                     'confirmed' => ['success', 'Đã xác nhận'],
@@ -183,7 +183,7 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <? php if ($res['status'] == 'pending'): ?>
+                                        <?php if ($res['status'] == 'pending'): ?>
                                     <button class="btn btn-success" 
                                             onclick="updateStatus(<?php echo $res['reservation_id']; ?>, 'confirmed')"
                                             title="Xác nhận">
@@ -221,7 +221,7 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </tbody>
                 </table>
             </div>
-            <? php else: ?>
+            <?php else: ?>
             <div class="text-center py-5">
                 <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
                 <h5>Không có đặt bàn nào</h5>

@@ -23,10 +23,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $unit_price = $_POST['unit_price'];
         $total_cost = $quantity * $unit_price;
         
-        // Update stock
+        // Update stock (schema uses cost_price)
         $query = "UPDATE ingredients 
                   SET current_stock = current_stock + :quantity,
-                      unit_price = : unit_price,
+                      cost_price = :unit_price,
                       last_restocked = CURDATE()
                   WHERE ingredient_id = :ingredient_id";
         $stmt = $db->prepare($query);
@@ -46,10 +46,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt = $db->prepare($query);
         $stmt->bindParam(':ingredient_id', $ingredient_id);
         $stmt->bindParam(':quantity', $quantity);
-        $stmt->bindParam(': unit_price', $unit_price);
+        $stmt->bindParam(':unit_price', $unit_price);
         $stmt->bindParam(':total_cost', $total_cost);
         $stmt->bindParam(':notes', $_POST['notes']);
-        $stmt->bindParam(': user_id', $_SESSION['user_id']);
+        $stmt->bindParam(':user_id', $_SESSION['user_id']);
         $stmt->execute();
         
         $db->commit();
@@ -85,13 +85,13 @@ $ingredients = $db->query("SELECT * FROM ingredients ORDER BY ingredient_name")-
                             <select name="ingredient_id" id="ingredient-select" class="form-select" required>
                                 <option value="">-- Chọn nguyên liệu --</option>
                                 <?php foreach ($ingredients as $item): ?>
-                                <option value="<?php echo $item['ingredient_id']; ? >"
+                                <option value="<?php echo $item['ingredient_id']; ?>"
                                         data-unit="<?php echo $item['unit']; ?>"
-                                        data-price="<?php echo $item['unit_price']; ? >"
+                                        data-price="<?php echo $item['cost_price'] ?? 0; ?>"
                                         data-current="<?php echo $item['current_stock']; ?>"
-                                        <? php echo $ingredient && $ingredient['ingredient_id'] == $item['ingredient_id'] ?  'selected' : ''; ? >>
+                                        <?php echo $ingredient && $ingredient['ingredient_id'] == $item['ingredient_id'] ?  'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($item['ingredient_name']); ?>
-                                    (Tồn: <?php echo $item['current_stock']; ? > <?php echo $item['unit']; ?>)
+                                    (Tồn: <?php echo $item['current_stock']; ?> <?php echo $item['unit']; ?>)
                                 </option>
                                 <?php endforeach; ?>
                             </select>
@@ -210,7 +210,7 @@ function calculateTotal() {
 }
 
 // Auto-select if ingredient provided in URL
-<? php if ($ingredient): ?>
+<?php if ($ingredient): ?>
 $('#ingredient-select').trigger('change');
 <?php endif; ?>
 </script>
