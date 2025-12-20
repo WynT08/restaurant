@@ -159,6 +159,7 @@ try {
                                     <th>Tổng tiền</th>
                                     <th>Trạng thái</th>
                                     <th>Thời gian</th>
+                                    <th>Hành động</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -174,12 +175,14 @@ try {
                                             'pending' => 'warning',
                                             'preparing' => 'primary',
                                             'served' => 'success',
+                                            'completed' => 'success',
                                             'cancelled' => 'secondary'
                                         ];
                                         $status_text = [
                                             'pending' => 'Chờ xử lý',
                                             'preparing' => 'Đang làm',
                                             'served' => 'Đã phục vụ',
+                                            'completed' => 'Hoàn thành',
                                             'cancelled' => 'Đã hủy'
                                         ];
                                         $order_status = $order['order_status'];
@@ -191,6 +194,14 @@ try {
                                         </span>
                                     </td>
                                     <td><?php echo formatDateTime($order['created_at']); ?></td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button class="btn btn-outline-primary" onclick="updateOrderStatus(<?php echo $order['order_id']; ?>, 'preparing')">Đang làm</button>
+                                            <button class="btn btn-outline-success" onclick="updateOrderStatus(<?php echo $order['order_id']; ?>, 'served')">Đã phục vụ</button>
+                                            <button class="btn btn-outline-info" onclick="updateOrderStatus(<?php echo $order['order_id']; ?>, 'completed')">Hoàn thành</button>
+                                            <button class="btn btn-outline-secondary" onclick="updateOrderStatus(<?php echo $order['order_id']; ?>, 'cancelled')">Hủy</button>
+                                        </div>
+                                    </td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -254,3 +265,22 @@ try {
 </style>
 
 <?php include '../../includes/footer.php'; ?>
+
+<script>
+function updateOrderStatus(orderId, status) {
+    $.post('../orders/ajax_update_order_status.php', { order_id: orderId, status: status }, function(response) {
+        try {
+            var res = typeof response === 'string' ? JSON.parse(response) : response;
+            if (res.status === 'success') {
+                location.reload();
+            } else {
+                alert(res.message || 'Cập nhật trạng thái thất bại');
+            }
+        } catch (e) {
+            alert('Không thể xử lý phản hồi máy chủ');
+        }
+    }).fail(function() {
+        alert('Không thể kết nối máy chủ');
+    });
+}
+</script>
