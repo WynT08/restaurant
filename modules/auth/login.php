@@ -161,9 +161,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </button>
             </form>
             
-            <div class="text-center mt-3">
-                <small class="text-muted">Demo: admin@example.com / password</small>
-            </div>
         </div>
     </div>
     
