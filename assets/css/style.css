@@ -1,5 +1,5 @@
 /* General Styles */
-: root {
+:root {
     --primary-color: #667eea;
     --secondary-color: #764ba2;
     --success-color: #28a745;
@@ -61,7 +61,7 @@ body {
     border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
-.sidebar-menu li. menu-header {
+.sidebar-menu li.menu-header {
     padding:  15px 20px 10px;
     font-size:  0.75rem;
     text-transform: uppercase;
@@ -90,7 +90,7 @@ body {
     padding-left: 25px;
 }
 
-.sidebar-menu li. active a {
+.sidebar-menu li.active a {
     background: rgba(255,255,255,0.15);
     border-left: 4px solid white;
 }
@@ -111,12 +111,12 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.navbar . nav-link {
+.navbar .nav-link {
     color:  #495057;
     position: relative;
 }
 
-.navbar .nav-link . badge {
+.navbar .nav-link .badge {
     position: absolute;
     top: 0;
     right: 0;
@@ -232,7 +232,7 @@ body {
         margin-left: calc(-1 * var(--sidebar-width));
     }
     
-    .sidebar. show {
+    .sidebar.show {
         margin-left: 0;
     }
     
@@ -258,7 +258,7 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.08) !important;
 }
 
-. shadow {
+.shadow {
     box-shadow: 0 4px 8px rgba(0,0,0,0.12) !important;
 }
 
