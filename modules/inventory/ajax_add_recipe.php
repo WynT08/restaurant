@@ -1,7 +1,10 @@
 <?php
+
 require_once '../../config/config.php';
+require_once '../../includes/functions.php';
 require_once '../../config/database.php';
 
+ob_clean();
 header('Content-Type: application/json');
 
 if (!isLoggedIn()) {
@@ -29,14 +32,13 @@ try {
         exit();
     }
     
-    // Insert recipe
-    $query = "INSERT INTO recipes (item_id, ingredient_id, quantity, unit) 
-              VALUES (:item_id, :ingredient_id, :quantity, :unit)";
+    // Insert recipe (không có trường unit)
+    $query = "INSERT INTO recipes (item_id, ingredient_id, quantity) 
+              VALUES (:item_id, :ingredient_id, :quantity)";
     $stmt = $db->prepare($query);
     $stmt->bindParam(':item_id', $_POST['item_id']);
     $stmt->bindParam(':ingredient_id', $_POST['ingredient_id']);
     $stmt->bindParam(':quantity', $_POST['quantity']);
-    $stmt->bindParam(':unit', $ingredient['unit']);
     $stmt->execute();
     
     echo json_encode(['success' => true]);

@@ -4,6 +4,11 @@ class Database {
     private $db_name = "restaurant_db";
     private $username = "root";
     private $password = "";
+
+    public function getHost() { return $this->host; }
+    public function getDbName() { return $this->db_name; }
+    public function getUsername() { return $this->username; }
+    public function getPassword() { return $this->password; }
     public $conn;
 
     public function getConnection() {

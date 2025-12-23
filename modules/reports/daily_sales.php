@@ -9,18 +9,18 @@ $to_date = isset($_GET['to_date']) ? $_GET['to_date'] : date('Y-m-d');
 
 // Get sales data
 $query = "SELECT 
-            DATE(created_at) as sale_date,
-            COUNT(*) as total_orders,
-            SUM(total_amount) as total_revenue,
-            SUM(subtotal) as subtotal,
-            SUM(tax_amount) as total_tax,
-            SUM(discount_amount) as total_discount,
-            AVG(total_amount) as avg_order_value
-          FROM orders
-          WHERE DATE(created_at) BETWEEN :from_date AND :to_date
-          AND payment_status = 'paid'
-          GROUP BY DATE(created_at)
-          ORDER BY sale_date DESC";
+                        DATE(created_at) as sale_date,
+                        COUNT(*) as total_orders,
+                        SUM(total_amount) as total_revenue,
+                        SUM(subtotal) as subtotal,
+                        SUM(tax) as total_tax,
+                        SUM(discount) as total_discount,
+                        AVG(total_amount) as avg_order_value
+                    FROM orders
+                    WHERE DATE(created_at) BETWEEN :from_date AND :to_date
+                    AND payment_status = 'paid'
+                    GROUP BY DATE(created_at)
+                    ORDER BY sale_date DESC";
 
 $stmt = $db->prepare($query);
 $stmt->bindParam(':from_date', $from_date);

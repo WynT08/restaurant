@@ -23,6 +23,34 @@ try {
 }
 
 // Handle add ingredient
+// Handle edit ingredient
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'edit') {
+    try {
+        $query = "UPDATE ingredients SET 
+            ingredient_name = :name,
+            unit = :unit,
+            current_stock = :current_stock,
+            reorder_level = :reorder_level,
+            cost_price = :cost_price,
+            supplier_name = :supplier_name,
+            supplier_phone = :supplier_phone
+            WHERE ingredient_id = :id";
+        $stmt = $db->prepare($query);
+        $stmt->bindParam(':name', $_POST['ingredient_name']);
+        $stmt->bindParam(':unit', $_POST['unit']);
+        $stmt->bindParam(':current_stock', $_POST['current_stock']);
+        $stmt->bindParam(':reorder_level', $_POST['reorder_level']);
+        $stmt->bindParam(':cost_price', $_POST['cost_price']);
+        $stmt->bindParam(':supplier_name', $_POST['supplier_name']);
+        $stmt->bindParam(':supplier_phone', $_POST['supplier_phone']);
+        $stmt->bindParam(':id', $_POST['ingredient_id']);
+        if ($stmt->execute()) {
+            setAlert('Cập nhật nguyên liệu thành công', 'success');
+        }
+    } catch (Exception $e) {
+        setAlert('Có lỗi khi cập nhật: ' . $e->getMessage(), 'danger');
+    }
+}
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'add') {
     try {
         // Schema dùng reorder_level thay vì min_stock; cost_price là giá đơn vị
@@ -328,6 +356,83 @@ $('#filter-status').on('change', function() {
 function viewHistory(ingredientId) {
     window.location.href = 'ingredient_history.php?id=' + ingredientId;
 }
+</script>
+
+<!-- Modal Sửa Nguyên Liệu -->
+<div class="modal fade" id="editIngredientModal" tabindex="-1" aria-labelledby="editIngredientModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="edit-ingredient-form">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editIngredientModalLabel">Sửa nguyên liệu</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="ingredient_id" id="edit-ingredient-id">
+                    <div class="mb-3">
+                        <label class="form-label">Tên nguyên liệu</label>
+                        <input type="text" class="form-control" name="ingredient_name" id="edit-ingredient-name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Đơn vị</label>
+                        <input type="text" class="form-control" name="unit" id="edit-ingredient-unit" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tồn kho</label>
+                        <input type="number" class="form-control" name="current_stock" id="edit-ingredient-stock" required min="0" step="0.01">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mức cảnh báo (reorder level)</label>
+                        <input type="number" class="form-control" name="reorder_level" id="edit-ingredient-reorder" required min="0" step="0.01">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Giá nhập</label>
+                        <input type="number" class="form-control" name="cost_price" id="edit-ingredient-price" required min="0" step="0.01">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nhà cung cấp</label>
+                        <input type="text" class="form-control" name="supplier_name" id="edit-ingredient-supplier">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">SĐT nhà cung cấp</label>
+                        <input type="text" class="form-control" name="supplier_phone" id="edit-ingredient-phone">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Dữ liệu nguyên liệu (từ PHP sang JS)
+const INGREDIENTS_DATA = <?php echo json_encode($ingredients); ?>;
+
+function editIngredient(ingredientId) {
+        const ing = INGREDIENTS_DATA.find(i => i.ingredient_id == ingredientId);
+        if (!ing) return;
+        $('#edit-ingredient-id').val(ing.ingredient_id);
+        $('#edit-ingredient-name').val(ing.ingredient_name);
+        $('#edit-ingredient-unit').val(ing.unit);
+        $('#edit-ingredient-stock').val(ing.current_stock);
+        $('#edit-ingredient-reorder').val(ing.reorder_level);
+        $('#edit-ingredient-price').val(ing.cost_price);
+        $('#edit-ingredient-supplier').val(ing.supplier_name);
+        $('#edit-ingredient-phone').val(ing.supplier_phone);
+        const modal = new bootstrap.Modal(document.getElementById('editIngredientModal'));
+        modal.show();
+}
+
+$('#edit-ingredient-form').on('submit', function(e) {
+        e.preventDefault();
+        const formData = $(this).serialize() + '&action=edit';
+        $.post('ingredients.php', formData, function(res) {
+                location.reload();
+        });
+});
 </script>
 
 <?php include '../../includes/footer.php'; ?>

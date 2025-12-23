@@ -51,7 +51,7 @@ $(document).ready(function() {
     }, 5000);
     
     // Confirm delete actions
-    $('. btn-delete').on('click', function(e) {
+    $('.btn-delete').on('click', function(e) {
         if (! confirm('Bạn có chắc muốn xóa? ')) {
             e.preventDefault();
         }
@@ -70,7 +70,7 @@ $(document).ready(function() {
     });
     
     // Number formatting
-    $('. format-money').each(function() {
+    $('.format-money').each(function() {
         var value = parseFloat($(this).text());
         $(this).text(formatMoney(value));
     });
@@ -171,7 +171,6 @@ function loadingSpinner(show = true) {
 // AJAX Error Handler
 $(document).ajaxError(function(event, jqxhr, settings, thrownError) {
     console.error('AJAX Error:', thrownError);
-    showToast('Có lỗi xảy ra. Vui lòng thử lại! ', 'danger');
     loadingSpinner(false);
 });
 

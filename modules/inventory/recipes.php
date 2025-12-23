@@ -74,12 +74,12 @@ $ingredients = $db->query("SELECT * FROM ingredients ORDER BY ingredient_name")-
                                 <?php 
                                 foreach ($recipes as $recipe): 
                                     // Calculate ingredient cost
-                                    $query = "SELECT unit_price FROM ingredients WHERE ingredient_id = :id";
+                                    $query = "SELECT cost_price FROM ingredients WHERE ingredient_id = :id";
                                     $stmt = $db->prepare($query);
                                     $stmt->bindParam(':id', $recipe['ingredient_id']);
                                     $stmt->execute();
                                     $ing = $stmt->fetch(PDO:: FETCH_ASSOC);
-                                    $cost = $recipe['quantity'] * ($ing['unit_price'] ?? 0);
+                                    $cost = $recipe['quantity'] * ($ing['cost_price'] ?? 0);
                                 ?>
                                 <tr>
                                     <td><?php echo htmlspecialchars($recipe['ingredient_name']); ?></td>
@@ -91,6 +91,11 @@ $ingredients = $db->query("SELECT * FROM ingredients ORDER BY ingredient_name")-
                                     </td>
                                     <?php if (!$isChef): ?>
                                     <td>
+                                        <button class="btn btn-sm btn-info" 
+                                            onclick="editIngredient(<?php echo $recipe['ingredient_id']; ?>)"
+                                            title="Sửa nguyên liệu">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
                                         <button class="btn btn-sm btn-danger" 
                                                 onclick="deleteRecipe(<?php echo $recipe['recipe_id']; ?>)">
                                             <i class="fas fa-trash"></i>
@@ -157,7 +162,95 @@ $ingredients = $db->query("SELECT * FROM ingredients ORDER BY ingredient_name")-
     </div>
 </div>
 
+<!-- Modal Sửa Nguyên Liệu (copy từ ingredients.php) -->
+<div class="modal fade" id="editIngredientModal" tabindex="-1" aria-labelledby="editIngredientModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="edit-recipe-ingredient-form">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editIngredientModalLabel">Sửa nguyên liệu trong công thức</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="ingredient_id" id="edit-ingredient-id">
+                    <div class="mb-3">
+                        <label class="form-label">Tên nguyên liệu</label>
+                        <input type="text" class="form-control" id="edit-ingredient-name" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Số lượng sử dụng trong món *</label>
+                        <input type="number" class="form-control" name="quantity" id="edit-ingredient-qty" required step="0.01" min="0.01">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Đơn vị</label>
+                        <input type="text" class="form-control" id="edit-ingredient-unit" readonly>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="/restaurant-management/assets/js/bootstrap.bundle.min.js"></script>
+
 <script>
+// Dữ liệu nguyên liệu (từ PHP sang JS)
+const INGREDIENTS_DATA = <?php echo json_encode($ingredients); ?>;
+
+// Dữ liệu công thức cho từng nguyên liệu trong món (từ HTML table)
+// Ta sẽ lấy số lượng và đơn vị từ dòng đang bấm sửa
+function editIngredient(ingredientId) {
+    if (typeof INGREDIENTS_DATA === 'undefined') {
+        alert('Không tìm thấy dữ liệu nguyên liệu!');
+        return;
+    }
+    const ing = INGREDIENTS_DATA.find(i => i.ingredient_id == ingredientId);
+    if (!ing) {
+        alert('Không tìm thấy nguyên liệu!');
+        return;
+    }
+    // Tìm dòng table chứa nút vừa bấm
+    const btn = event.target.closest('button');
+    const tr = btn.closest('tr');
+    // Lấy số lượng và đơn vị từ dòng table
+    let qty = '';
+    let unit = '';
+    if (tr) {
+        // Số lượng nằm trong <strong>...</strong> đầu tiên
+        const strong = tr.querySelector('strong');
+        if (strong) qty = strong.textContent.trim();
+        // Đơn vị là text sau strong
+        const tds = tr.querySelectorAll('td');
+        if (tds.length > 1) {
+            const td = tds[1];
+            const matches = td.innerText.match(/\d+\.?\d*\s*(\w+)/);
+            if (matches && matches[1]) unit = matches[1];
+        }
+    }
+    $('#edit-ingredient-id').val(ing.ingredient_id);
+    $('#edit-ingredient-name').val(ing.ingredient_name);
+    $('#edit-ingredient-qty').val(qty);
+    $('#edit-ingredient-unit').val(unit || ing.unit);
+    const modal = new bootstrap.Modal(document.getElementById('editIngredientModal'));
+    modal.show();
+}
+
+// Xử lý submit form sửa nguyên liệu trong công thức
+$('#edit-recipe-ingredient-form').on('submit', function(e) {
+    e.preventDefault();
+    const formData = $(this).serialize();
+    $.post('ajax_update_recipe.php', formData, function(response) {
+        if (response.success) {
+            location.reload();
+        } else {
+            alert(response.message || 'Có lỗi xảy ra!');
+        }
+    }, 'json');
+});
 const addIngredientModal = new bootstrap.Modal(document.getElementById('addIngredientModal'));
 
 function addIngredient(itemId) {
@@ -183,6 +276,15 @@ $('#add-ingredient-form').on('submit', function(e) {
     }, 'json');
 });
 
+// Xử lý submit form sửa nguyên liệu
+$('#edit-ingredient-form').on('submit', function(e) {
+    e.preventDefault();
+    const formData = $(this).serialize() + '&action=edit';
+    $.post('ingredients.php', formData, function(res) {
+        location.reload();
+    });
+});
+
 function deleteRecipe(recipeId) {
     if (confirm('Xóa nguyên liệu này khỏi công thức?')) {
         $.post('ajax_delete_recipe.php', { recipe_id: recipeId }, function(response) {
@@ -194,5 +296,4 @@ function deleteRecipe(recipeId) {
 }
 
 </script>
-
 <?php include '../../includes/footer.php'; ?>

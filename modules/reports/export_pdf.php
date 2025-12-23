@@ -17,18 +17,18 @@ $to_date   = sanitizeDate($_GET['to_date'] ?? null);
 
 // Fetch aggregated sales
 $stmt = $db->prepare(
-    "SELECT DATE(created_at) AS sale_date,
-            COUNT(*) AS total_orders,
-            SUM(total_amount) AS total_revenue,
-            SUM(subtotal) AS subtotal,
-            SUM(tax_amount) AS total_tax,
-            SUM(discount_amount) AS total_discount,
-            AVG(total_amount) AS avg_order_value
-     FROM orders
-     WHERE DATE(created_at) BETWEEN :from_date AND :to_date
-       AND payment_status IN ('paid','completed')
-     GROUP BY DATE(created_at)
-     ORDER BY sale_date DESC"
+        "SELECT DATE(created_at) AS sale_date,
+                        COUNT(*) AS total_orders,
+                        SUM(total_amount) AS total_revenue,
+                        SUM(subtotal) AS subtotal,
+                        SUM(tax) AS total_tax,
+                        SUM(discount) AS total_discount,
+                        AVG(total_amount) AS avg_order_value
+         FROM orders
+         WHERE DATE(created_at) BETWEEN :from_date AND :to_date
+             AND payment_status IN ('paid','completed')
+         GROUP BY DATE(created_at)
+         ORDER BY sale_date DESC"
 );
 $stmt->bindParam(':from_date', $from_date);
 $stmt->bindParam(':to_date', $to_date);

@@ -20,8 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $database = new Database();
         $db = $database->getConnection();
         
-        // Schema dùng password và role; is_active để chặn tài khoản khóa
-        $query = "SELECT * FROM users WHERE email = :email AND is_active = 1";
+        // Schema dùng password và role; status để chặn tài khoản khóa
+        $query = "SELECT * FROM users WHERE email = :email AND status = 'active'";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':email', $email);
         $stmt->execute();

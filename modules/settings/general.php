@@ -1,10 +1,10 @@
 <?php
-$page_title = 'Cài đặt hệ thống';
-include '../../includes/header.php';
-requirePermission('admin');
-
-// Handle form submission
+// Bắt output buffer để tránh lỗi headers already sent
+ob_start();
+// Xử lý POST và redirect trước khi include bất kỳ file HTML nào để tránh lỗi headers already sent
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    require_once '../../includes/header.php';
+    requirePermission('admin');
     try {
         foreach ($_POST as $key => $value) {
             if ($key != 'submit') {
@@ -22,6 +22,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         setAlert('Có lỗi xảy ra (bảng settings chưa tồn tại?): ' . $e->getMessage(), 'danger');
     }
 }
+$page_title = 'Cài đặt hệ thống';
+include '../../includes/header.php';
+requirePermission('admin');
 
 // Get all settings (bảng settings không có trong schema seed, fallback rỗng)
 $settings = [];
@@ -100,9 +103,9 @@ try {
                         
                         <div class="mb-3">
                             <label class="form-label">Số ngày đặt bàn trước tối đa</label>
-                            <input type="number" name="booking_advance_days" class="form-control" 
-                                   value="<? php echo htmlspecialchars($settings['booking_advance_days'] ?? '30'); ?>" 
-                                   min="1">
+                              <input type="number" name="booking_advance_days" class="form-control" 
+                                  value="<?php echo htmlspecialchars($settings['booking_advance_days'] ?? '30'); ?>" 
+                                  min="1">
                         </div>
                         
                         <button type="submit" name="submit" class="btn btn-primary">

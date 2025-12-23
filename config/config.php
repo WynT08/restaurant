@@ -30,13 +30,13 @@ if (session_status() == PHP_SESSION_NONE) {
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Autoload classes
-spl_autoload_register(function ($class_name) {
-    $file = ROOT_PATH . '/classes/' . $class_name . '.php';
-    if (file_exists($file)) {
-        require_once $file;
-    }
-});
+// Autoload classes (tạm thời tắt để tránh lỗi nếu không có thư mục classes)
+// spl_autoload_register(function ($class_name) {
+//     $file = ROOT_PATH . '/classes/' . $class_name . '.php';
+//     if (file_exists($file)) {
+//         require_once $file;
+//     }
+// });
 
 // Include functions
 require_once ROOT_PATH . '/includes/functions.php';

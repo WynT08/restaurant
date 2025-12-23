@@ -6,12 +6,8 @@ require_once '../../config/database.php';
 $database = new Database();
 $db = $database->getConnection();
 
-// Ensure users.role enum supports extended roles
-try {
-    $db->exec("ALTER TABLE users MODIFY role ENUM('admin','manager','waiter','chef','cashier','staff') NOT NULL DEFAULT 'staff'");
-} catch (Exception $e) {
-    // ignore if fails
-}
+// Ensure users.user_role enum supports extended roles
+// (Không cần ALTER TABLE vì cột là user_role)
 
 requirePermission('admin');
 
@@ -63,33 +59,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Mật khẩu tối thiểu 6 ký tự');
             }
             $hashed_password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-            $password_clause = ', password = :password';
+            $password_clause = ', password_hash = :password_hash';
         }
 
                 // Normalize role to supported set
-                $role = $_POST['role'];
+                $user_role = $_POST['role'];
                 $allowed_roles = ['admin','manager','waiter','chef','cashier','staff'];
-                if (!in_array($role, $allowed_roles, true)) {
-                        $role = 'staff';
+                if (!in_array($user_role, $allowed_roles, true)) {
+                    $user_role = 'staff';
                 }
 
                 $query = "UPDATE users SET
                                         full_name = :full_name,
                                         email = :email,
                                         phone = :phone,
-                                        role = :role,
+                                        user_role = :user_role,
                                         avatar = :avatar
                                         $password_clause
                                     WHERE user_id = :id";
-        $stmt = $db->prepare($query);
-        $stmt->bindParam(':full_name', $_POST['full_name']);
-        $stmt->bindParam(':email', $_POST['email']);
-        $stmt->bindParam(':phone', $_POST['phone']);
-                $stmt->bindParam(':role', $role);
-        $stmt->bindParam(':avatar', $avatar);
-        $stmt->bindParam(':id', $user_id, PDO::PARAM_INT);
+            $stmt = $db->prepare($query);
+            $stmt->bindParam(':full_name', $_POST['full_name']);
+            $stmt->bindParam(':email', $_POST['email']);
+            $stmt->bindParam(':phone', $_POST['phone']);
+                $stmt->bindParam(':user_role', $user_role);
+            $stmt->bindParam(':avatar', $avatar);
+            $stmt->bindParam(':id', $user_id, PDO::PARAM_INT);
         if (!empty($password_clause)) {
-            $stmt->bindParam(':password', $hashed_password);
+            $stmt->bindParam(':password_hash', $hashed_password);
         }
 
         $stmt->execute();
@@ -157,7 +153,7 @@ include '../../includes/header.php';
                             <select name="role" class="form-select" required>
                                 <?php
                                 $roles = ['admin' => 'Admin', 'manager' => 'Manager', 'waiter' => 'Phục vụ', 'chef' => 'Đầu bếp', 'cashier' => 'Thu ngân'];
-                                $current_role = $user['role'] ?? ($user['user_role'] ?? 'staff');
+                                $current_role = $user['user_role'] ?? 'staff';
                                 ?>
                                 <option value="">-- Chọn chức vụ --</option>
                                 <?php foreach ($roles as $val => $label): ?>

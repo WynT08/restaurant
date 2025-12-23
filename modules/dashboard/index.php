@@ -57,7 +57,7 @@ $stats['pending_reservations'] = $stmt->fetch(PDO::FETCH_ASSOC)['pending_reserva
 $query = "SELECT o.*, rt.table_number, u.full_name as waiter_name
           FROM orders o
           LEFT JOIN restaurant_tables rt ON o.table_id = rt.table_id
-          LEFT JOIN users u ON o.user_id = u.user_id
+          LEFT JOIN users u ON o.waiter_id = u.user_id
           ORDER BY o.created_at DESC
           LIMIT 10";
 $stmt = $db->prepare($query);

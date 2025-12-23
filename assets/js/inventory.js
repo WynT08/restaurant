@@ -16,9 +16,9 @@ function checkLowStock() {
         url: 'ajax_check_low_stock.php',
         method: 'GET',
         dataType: 'json',
-        success: function(items) {
-            if (items.length > 0) {
-                showLowStockAlert(items);
+        success: function(response) {
+            if (response.success && response.data && response.data.length > 0) {
+                showLowStockAlert(response.data);
             }
         }
     });
@@ -42,13 +42,17 @@ function initializeAutocomplete() {
     if (!$input.length) return;
 
     $input.autocomplete({
-        source: function(request, response) {
+        source: function(request, responseCb) {
             $.ajax({
                 url: 'ajax_search_ingredients.php',
-                data: { term: request.term },
+                data: { q: request.term },
                 dataType: 'json',
-                success: function(data) {
-                    response(data);
+                success: function(res) {
+                    if (res.success && res.data) {
+                        responseCb(res.data);
+                    } else {
+                        responseCb([]);
+                    }
                 }
             });
         },
@@ -61,7 +65,7 @@ function initializeAutocomplete() {
 
 function initializeRecipeCalculator() {
     // Calculate total cost when recipe quantities change
-    $('. recipe-quantity').on('input', function() {
+    $('.recipe-quantity').on('input', function() {
         calculateRecipeCost();
     });
 }
@@ -103,28 +107,57 @@ function renderStockChart(ingredientId) {
         method: 'GET',
         data: { ingredient_id: ingredientId },
         dataType: 'json',
-        success: function(data) {
-            const ctx = document.getElementById('stockChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.dates,
-                    datasets: [{
-                        label: 'Tồn kho',
-                        data: data.quantities,
-                        borderColor: 'rgb(75, 192, 192)',
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero:  true
+        success: function(response) {
+            if (response.success && response.data) {
+                // Giả sử response.data là mảng các bản ghi lịch sử tồn kho
+                const dates = response.data.map(item => item.created_at);
+                const quantities = response.data.map(item => item.quantity);
+                const ctx = document.getElementById('stockChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Tồn kho',
+                            data: quantities,
+                            borderColor: 'rgb(75, 192, 192)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero:  true
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
         }
     });
+}
+
+// Dữ liệu nguyên liệu phải được render ra JS từ PHP, ví dụ:
+// const INGREDIENTS_DATA = ...;
+function editIngredient(ingredientId) {
+    if (typeof INGREDIENTS_DATA === 'undefined') {
+        alert('Không tìm thấy dữ liệu nguyên liệu!');
+        return;
+    }
+    const ing = INGREDIENTS_DATA.find(i => i.ingredient_id == ingredientId);
+    if (!ing) {
+        alert('Không tìm thấy nguyên liệu!');
+        return;
+    }
+    $('#edit-ingredient-id').val(ing.ingredient_id);
+    $('#edit-ingredient-name').val(ing.ingredient_name);
+    $('#edit-ingredient-unit').val(ing.unit);
+    $('#edit-ingredient-stock').val(ing.current_stock);
+    $('#edit-ingredient-reorder').val(ing.reorder_level);
+    $('#edit-ingredient-price').val(ing.cost_price);
+    $('#edit-ingredient-supplier').val(ing.supplier_name);
+    $('#edit-ingredient-phone').val(ing.supplier_phone);
+    const modal = new bootstrap.Modal(document.getElementById('editIngredientModal'));
+    modal.show();
 }

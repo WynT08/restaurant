@@ -18,34 +18,26 @@ try {
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
         // Validate
-        if (empty($_POST['username']) || empty($_POST['password']) || empty($_POST['full_name'])) {
+        if (empty($_POST['email']) || empty($_POST['password']) || empty($_POST['full_name'])) {
             throw new Exception('Vui lòng điền đầy đủ thông tin');
         }
         if (($_POST['password'] ?? '') !== ($_POST['confirm_password'] ?? '')) {
             throw new Exception('Mật khẩu xác nhận không khớp');
         }
-        
         // Normalize role to supported set
-        $role = $_POST['role'];
+        $user_role = $_POST['role'];
         $allowed_roles = ['admin','manager','waiter','chef','cashier','staff'];
-        if (!in_array($role, $allowed_roles, true)) {
-            $role = 'staff';
+        if (!in_array($user_role, $allowed_roles, true)) {
+            $user_role = 'staff';
         }
-        
-        // Email fallback to avoid unique constraint issues when left blank; make it unique
         $email = trim($_POST['email'] ?? '');
-        if ($email === '') {
-            $email = $_POST['username'] . '+' . uniqid() . '@example.local';
-        }
-        
-        // Check username exists
-        $query = "SELECT COUNT(*) FROM users WHERE username = :username";
+        // Check email exists
+        $query = "SELECT COUNT(*) FROM users WHERE email = :email";
         $stmt = $db->prepare($query);
-        $stmt->bindParam(':username', $_POST['username']);
+        $stmt->bindParam(':email', $email);
         $stmt->execute();
-        
         if ($stmt->fetchColumn() > 0) {
-            throw new Exception('Username đã tồn tại');
+            throw new Exception('Email đã tồn tại');
         }
         
         // Upload avatar
@@ -64,27 +56,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         // Hash password
         $hashed_password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-        
         // Insert user
         $query = "INSERT INTO users (
-            username, password, full_name, email, phone, 
-            role, avatar, is_active
+            full_name, email, password_hash, user_role, phone, avatar, status
         ) VALUES (
-            :username, :password, :full_name, :email, :phone,
-            :role, :avatar, 1
+            :full_name, :email, :password_hash, :user_role, :phone, :avatar, 'active'
         )";
-        
         $stmt = $db->prepare($query);
-        $stmt->bindParam(':username', $_POST['username']);
-        $stmt->bindParam(':password', $hashed_password);
         $stmt->bindParam(':full_name', $_POST['full_name']);
         $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':password_hash', $hashed_password);
+        $stmt->bindParam(':user_role', $user_role);
         $stmt->bindParam(':phone', $_POST['phone']);
-        $stmt->bindParam(':role', $role);
         $stmt->bindParam(':avatar', $avatar);
         
         if ($stmt->execute()) {
-            logActivity($db, $_SESSION['user_id'], 'create_user', 'Created user:  ' . $_POST['username']);
+            logActivity($db, $_SESSION['user_id'], 'create_user', 'Created user:  ' . $email);
             setAlert('Thêm nhân viên thành công', 'success');
             header("Location: manage_staff.php");
             exit();
@@ -117,10 +104,7 @@ include '../../includes/header.php';
                                 <input type="text" name="full_name" class="form-control" required>
                             </div>
                             
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Username *</label>
-                                <input type="text" name="username" class="form-control" required>
-                            </div>
+                            <!-- Username field removed -->
                         </div>
                         
                         <div class="row">
