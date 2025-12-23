@@ -19,10 +19,34 @@ $ingredients = $db->query("SELECT * FROM ingredients ORDER BY ingredient_name")-
 
 ?>
 
+
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3">Công thức món ăn</h1>
+        <div class="input-group" style="max-width: 350px;">
+            <input type="text" id="recipe-search" class="form-control" placeholder="Tìm kiếm món ăn hoặc nguyên liệu...">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+        </div>
     </div>
+</div>
+<script>
+// Tìm kiếm công thức món ăn theo tên món hoặc nguyên liệu
+document.getElementById('recipe-search').addEventListener('input', function() {
+    const keyword = this.value.trim().toLowerCase();
+    document.querySelectorAll('.recipe-card').forEach(function(card) {
+        const name = card.getAttribute('data-name').toLowerCase();
+        const category = card.getAttribute('data-category').toLowerCase();
+        // Tìm trong tên món hoặc tên danh mục
+        let match = name.includes(keyword) || category.includes(keyword);
+        // Nếu chưa match, thử tìm trong bảng nguyên liệu
+        if (!match && keyword.length > 0) {
+            const ingredients = Array.from(card.querySelectorAll('tbody td:first-child')).map(td => td.textContent.toLowerCase());
+            match = ingredients.some(ing => ing.includes(keyword));
+        }
+        card.style.display = (keyword === '' || match) ? '' : 'none';
+    });
+});
+</script>
 
     <div class="row">
         <?php foreach ($items as $item): ?>

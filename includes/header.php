@@ -106,27 +106,6 @@ if ($current_role === 'cashier') {
                     </button>
                     
                     <div class="navbar-nav ms-auto">
-                        <!-- Notifications -->
-                        <div class="nav-item dropdown">
-                            <a class="nav-link" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-bell"></i>
-                                <span class="badge bg-danger">3</span>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown">
-                                <h6 class="dropdown-header">Thông báo</h6>
-                                <a class="dropdown-item" href="#">
-                                    <i class="fas fa-exclamation-circle text-warning"></i>
-                                    Nguyên liệu sắp hết
-                                </a>
-                                <a class="dropdown-item" href="#">
-                                    <i class="fas fa-calendar text-info"></i>
-                                    Có 5 đặt bàn mới
-                                </a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item text-center" href="#">Xem tất cả</a>
-                            </div>
-                        </div>
-                        
                         <!-- User Profile -->
                         <div class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
