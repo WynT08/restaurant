@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Get categories for form
-$categories = $db->query("SELECT * FROM categories WHERE status = 'active' ORDER BY display_order")->fetchAll(PDO::FETCH_ASSOC);
+$categories = $db->query("SELECT * FROM categories WHERE is_active = 1 ORDER BY display_order")->fetchAll(PDO::FETCH_ASSOC);
 
 include '../../includes/header.php';
 ?>
