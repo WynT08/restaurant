@@ -2,9 +2,12 @@
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
 
+
 header('Content-Type: application/json');
 
-if (!isLoggedIn()) {
+$method = $_SERVER['REQUEST_METHOD'];
+// Cho phép khách GET (xem danh sách đặt bàn) và POST (đặt bàn), các method khác vẫn yêu cầu đăng nhập
+if (!in_array($method, ['GET', 'POST']) && !isLoggedIn()) {
     http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit();

@@ -365,7 +365,7 @@ BEGIN
         FETCH cur INTO ing_id, ing_qty;
         IF done THEN LEAVE read_loop; END IF;
         
-        INSERT INTO `inventory_transactions` 
+        INSERT INTO `inventory_transactions`
         (`ingredient_id`, `transaction_type`, `quantity`, `reference_type`, `reference_id`, `performed_by`, `notes`)
         VALUES (ing_id, 'out', ing_qty, 'order', NEW.order_id, NULL, 'Auto deduct from order');
         
@@ -375,3 +375,14 @@ BEGIN
 END$$
 DELIMITER ;
 
+CREATE TABLE contact (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    phone VARCHAR(30) NOT NULL,
+    email VARCHAR(100),
+    subject VARCHAR(200) NOT NULL,
+    message TEXT NOT NULL,
+    reply TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    replied_at DATETIME NULL
+);

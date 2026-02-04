@@ -136,7 +136,7 @@ canvas {
 }
 
 .order-card-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0c5b2f 0%, #764ba2 100%);
     color: white;
     padding: 15px;
     display: flex;
@@ -173,7 +173,7 @@ canvas {
 }
 
 .item-quantity {
-    background: #667eea;
+    background: #0c5b2f;
     color: white;
     padding: 5px 10px;
     border-radius:  6px;
@@ -229,7 +229,7 @@ canvas {
 }
 
 .calendar-day.today {
-    border-color: #667eea;
+    border-color: #0c5b2f;
     background: #f0f3ff;
 }
 
@@ -241,7 +241,7 @@ canvas {
 }
 
 .reservation-item {
-    background: #667eea;
+    background: #0c5b2f;
     color: white;
     padding: 5px 8px;
     border-radius:  4px;

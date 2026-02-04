@@ -1,6 +1,107 @@
+/* Contact List Redesign */
+.contact-list-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 24px;
+    margin-top: 32px;
+}
+
+.contact-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    padding: 0;
+    transition: box-shadow 0.2s;
+    border: 1px solid #f1f1f1;
+}
+.contact-card:hover {
+    box-shadow: 0 6px 24px rgba(12,91,47,0.13);
+    border-color: var(--primary-color, #0c5b2f);
+}
+.contact-card .card-body {
+    padding: 24px 20px 18px 20px;
+}
+.contact-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.contact-id {
+    font-size: 0.95rem;
+    color: #888;
+    font-weight: 500;
+}
+.contact-status.badge {
+    font-size: 0.85rem;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+.badge-success {
+    background: #e6f9ed;
+    color: #1fa463;
+}
+.badge-warning {
+    background: #fff7e6;
+    color: #e6a700;
+}
+.badge-secondary {
+    background: #f0f0f0;
+    color: #888;
+}
+.contact-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--primary-color, #0c5b2f);
+}
+.contact-info {
+    display: flex;
+    gap: 18px;
+    font-size: 0.98rem;
+    color: #555;
+    margin-bottom: 8px;
+}
+.contact-info i {
+    margin-right: 6px;
+    color: #888;
+}
+.contact-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.93rem;
+    color: #888;
+    margin-bottom: 10px;
+}
+.contact-message, .contact-response {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    font-size: 0.98rem;
+    color: #333;
+}
+.contact-response {
+    background: #e6f9ed;
+    color: #1fa463;
+}
+.contact-actions {
+    text-align: right;
+    margin-top: 8px;
+}
+@media (max-width: 600px) {
+    .contact-list-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+    .contact-card .card-body {
+        padding: 16px 8px 12px 8px;
+    }
+}
 /* General Styles */
 :root {
-    --primary-color: #667eea;
+    --primary-color: #0c5b2f;
     --secondary-color: #764ba2;
     --success-color: #28a745;
     --danger-color: #dc3545;
@@ -211,7 +312,7 @@ body.sidebar-collapsed .main-content {
 
 .form-control:focus, .form-select:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(12, 91, 47, 0.25);
 }
 
 /* Alerts */

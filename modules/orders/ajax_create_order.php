@@ -33,19 +33,19 @@ try {
         $calc_subtotal += $qty * $price;
     }
     $subtotal = isset($data['subtotal']) ? (float) $data['subtotal'] : $calc_subtotal;
-    $tax_amount = isset($data['tax']) ? (float) $data['tax'] : 0;
-    $discount_amount = isset($data['discount']) ? (float) $data['discount'] : 0;
-    $total_amount = isset($data['total']) ? (float) $data['total'] : ($subtotal + $tax_amount - $discount_amount);
+    $tax = isset($data['tax']) ? (float) $data['tax'] : 0;
+    $discount = isset($data['discount']) ? (float) $data['discount'] : 0;
+    $total_amount = isset($data['total']) ? (float) $data['total'] : ($subtotal + $tax - $discount);
     
     // Insert order
     $query = "INSERT INTO orders (
-        order_number, table_id, user_id, order_type,
-        subtotal, tax_amount, discount_amount, total_amount,
+        order_number, table_id, waiter_id, order_type,
+        subtotal, tax, discount, total_amount,
         customer_name, customer_phone, notes,
         order_status, payment_status
     ) VALUES (
-        :order_number, :table_id, :user_id, :order_type,
-        :subtotal, :tax_amount, :discount_amount, :total_amount,
+        :order_number, :table_id, :waiter_id, :order_type,
+        :subtotal, :tax, :discount, :total_amount,
         :customer_name, :customer_phone, :notes,
         :order_status, :payment_status
     )";
@@ -62,11 +62,11 @@ try {
     
     $stmt->bindParam(':order_number', $order_number);
     $stmt->bindParam(':table_id', $data['table_id']);
-    $stmt->bindParam(':user_id', $_SESSION['user_id']);
+    $stmt->bindParam(':waiter_id', $_SESSION['user_id']);
     $stmt->bindParam(':order_type', $data['order_type']);
     $stmt->bindParam(':subtotal', $subtotal);
-    $stmt->bindParam(':tax_amount', $tax_amount);
-    $stmt->bindParam(':discount_amount', $discount_amount);
+    $stmt->bindParam(':tax', $tax);
+    $stmt->bindParam(':discount', $discount);
     $stmt->bindParam(':total_amount', $total_amount);
     $stmt->bindParam(':customer_name', $data['customer_name']);
     $stmt->bindParam(':customer_phone', $data['customer_phone']);
@@ -83,26 +83,29 @@ try {
     $stmt = $db->prepare($query);
     
     foreach ($data['items'] as $item) {
-        $stmt->bindParam(':order_id', $order_id);
-        $stmt->bindParam(':item_id', $item['item_id']);
-        $qty = isset($item['quantity']) ? (float) $item['quantity'] : 0;
-        $price = isset($item['price']) ? (float) $item['price'] : 0;
-        $stmt->bindParam(':quantity', $qty);
-        $stmt->bindParam(':unit_price', $price);
-        $item_subtotal = $qty * $price;
-        $stmt->bindParam(':subtotal', $item_subtotal);
-        $special_instructions = $item['notes'] ??  '';
-        $stmt->bindParam(':special_instructions', $special_instructions);
-        $stmt->execute();
-        
-        // Update ingredient stock
-        updateIngredientStock($db, $item['item_id'], $qty);
+           if (empty($item['item_id'])) {
+              // Bỏ qua item không hợp lệ
+              continue;
+           }
+           $stmt->bindParam(':order_id', $order_id);
+           $stmt->bindParam(':item_id', $item['item_id']);
+           $qty = isset($item['quantity']) ? (float) $item['quantity'] : 0;
+           $price = isset($item['price']) ? (float) $item['price'] : 0;
+           $stmt->bindParam(':quantity', $qty);
+           $stmt->bindParam(':unit_price', $price);
+           $item_subtotal = $qty * $price;
+           $stmt->bindParam(':subtotal', $item_subtotal);
+           $special_instructions = $item['notes'] ??  '';
+           $stmt->bindParam(':special_instructions', $special_instructions);
+           $stmt->execute();
+           // Update ingredient stock
+           updateIngredientStock($db, $item['item_id'], $qty);
     }
     
     // Insert payment if paid
     if ($payment_status == 'paid') {
-        $query = "INSERT INTO payments (order_id, payment_method, amount, payment_status, paid_at)
-                  VALUES (:order_id, :payment_method, :amount, 'completed', NOW())";
+        $query = "INSERT INTO payments (order_id, payment_method, amount, paid_at)
+              VALUES (:order_id, :payment_method, :amount, NOW())";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':order_id', $order_id);
         $stmt->bindParam(':payment_method', $data['payment_method']);

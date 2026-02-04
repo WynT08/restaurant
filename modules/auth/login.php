@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     <style>
         body {
-            background:  linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background:  linear-gradient(135deg, #0c5b2f 0%, #764ba2 100%);
             height: 100vh;
             display: flex;
             align-items: center;
@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         .login-logo i {
             font-size: 60px;
-            color: #667eea;
+            color: #0c5b2f;
         }
         .login-logo h3 {
             margin-top: 15px;
@@ -109,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             padding: 12px;
             font-size: 16px;
             font-weight: 600;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0c5b2f 0%, #764ba2 100%);
             border: none;
         }
         .btn-login:hover {

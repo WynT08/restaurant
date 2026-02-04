@@ -2,7 +2,7 @@
 // Cấu hình hệ thống
 define('SITE_URL', 'http://localhost/restaurant-management');
 define('SITE_NAME', 'Restaurant Management System');
-define('SITE_TITLE', 'Nhà hàng Ngon Việt');
+define('SITE_TITLE', 'Nhà hàng X');
 
 // Đường dẫn
 define('ROOT_PATH', dirname(__DIR__));

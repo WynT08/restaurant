@@ -81,7 +81,14 @@ function loadMenuItems(categoryId, search = '') {
             $('#menu-items-grid').html('<div class="text-center"><i class="fas fa-spinner fa-spin fa-2x"></i></div>');
         },
         success: function(items) {
-            console.log('Items loaded:', items. length);
+            let msg = 'Items loaded: ' + items.length + '\n';
+            items.forEach((item, idx) => {
+                msg += '[' + idx + '] item_id: ' + item.item_id + ', name: ' + item.item_name + '\n';
+                if (!item.item_id) {
+                    msg += '==> LỖI: Item thiếu item_id!\n';
+                }
+            });
+            alert(msg);
             displayMenuItems(items);
         },
         error: function(xhr, status, error) {
@@ -136,20 +143,18 @@ function displayMenuItems(items) {
 }
 
 function addToCart(itemId, itemName, price) {
-    console.log('Adding to cart:', itemName);
+    // Log object item khi thêm vào cart
+        const itemObj = { item_id: itemId, name: itemName, price: parseFloat(price), quantity: 1 };
+    console.log('Adding to cart, item object:', itemObj);
+    // ...existing code...
     
     // Check if item already in cart
-    const existingItem = cart.find(item => item. id === itemId);
+        const existingItem = cart.find(item => item.item_id === itemId);
     
     if (existingItem) {
         existingItem.quantity++;
     } else {
-        cart.push({
-            id: itemId,
-            name: itemName,
-            price: parseFloat(price),
-            quantity:  1
-        });
+        cart.push(itemObj);
     }
     
     updateCartDisplay();

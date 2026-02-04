@@ -90,7 +90,12 @@ function uploadFile($file, $target_dir, $allowed_types = ['jpg', 'jpeg', 'png', 
     // Generate unique filename
     $new_filename = uniqid() . '_' . time() . '.' . $imageFileType;
     $target_file = $target_dir . $new_filename;
-    
+
+    // Ensure the target directory exists
+    if (!is_dir($target_dir)) {
+        mkdir($target_dir, 0777, true);
+    }
+
     if (move_uploaded_file($file["tmp_name"], $target_file)) {
         return ['success' => true, 'filename' => $new_filename];
     } else {

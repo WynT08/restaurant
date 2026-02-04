@@ -1,238 +1,90 @@
 <?php
-require_once __DIR__ . '/../config/config.php';
-require_once __DIR__ . '/../config/database.php';
-
 header('Content-Type: application/json');
-
-if (!isLoggedIn()) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit();
+require_once '../config/database.php';
+// Xử lý tạo đơn hàng mới (POST)
+$db = new Database();
+$conn = $db->getConnection();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+	// Debug: log dữ liệu nhận được để kiểm tra
+	file_put_contents(__DIR__ . '/orders_debug.log', date('Y-m-d H:i:s') . "\n" . file_get_contents('php://input') . "\n\n", FILE_APPEND);
+	// Đọc lại input vì file_get_contents đã đọc hết stream
+	$input = json_decode(file_get_contents('php://input'), true);
+	// Nếu $input null, thử lấy lại từ biến tạm
+	if (!$input) {
+		$input = json_decode(file_get_contents(__DIR__ . '/orders_debug.log'), true);
+	}
+	$input = json_decode(file_get_contents('php://input'), true);
+	if (!$input || !isset($input['items']) || !is_array($input['items']) || count($input['items']) === 0) {
+		echo json_encode(['success' => false, 'message' => 'Dữ liệu đơn hàng không hợp lệ!']);
+		exit;
+	}
+	// Tạo order_number duy nhất
+	$order_number = 'ORD' . date('YmdHis') . rand(100,999);
+	$order_type = isset($input['order_type']) ? $input['order_type'] : 'delivery';
+	$customer_name = $input['customer_name'] ?? '';
+	$customer_phone = $input['customer_phone'] ?? '';
+	$customer_email = $input['customer_email'] ?? '';
+	$table_id = !empty($input['table_id']) ? $input['table_id'] : null;
+	$calc_subtotal = 0;
+	foreach ($input['items'] as $item) {
+		$qty = isset($item['quantity']) ? (float)$item['quantity'] : 0;
+		$price = isset($item['price']) ? (float)$item['price'] : 0;
+		$calc_subtotal += $qty * $price;
+	}
+	$subtotal = $calc_subtotal;
+	$tax = isset($input['tax']) ? (float)$input['tax'] : 0;
+	$discount = isset($input['discount']) ? (float)$input['discount'] : 0;
+	$total_amount = $subtotal + $tax - $discount;
+	$order_status = 'preparing';
+	$payment_status = 'paid';
+	$notes = $input['special_requests'] ?? '';
+	try {
+		$conn->beginTransaction();
+		$stmt = $conn->prepare("INSERT INTO orders (order_number, table_id, order_type, waiter_id, customer_name, customer_phone, subtotal, tax, discount, total_amount, notes, order_status, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+		$waiter_id = 1; // waiter_id mặc định (có thể sửa thành 0 hoặc lấy từ session nếu có)
+		$stmt->execute([
+			$order_number,
+			$table_id,
+			$order_type,
+			$waiter_id,
+			$customer_name,
+			$customer_phone,
+			$subtotal,
+			$tax,
+			$discount,
+			$total_amount,
+			$notes,
+			$order_status,
+			$payment_status
+		]);
+		$order_id = $conn->lastInsertId();
+		// Lưu từng món vào order_items (đầy đủ unit_price, subtotal, special_instructions)
+		$stmtItem = $conn->prepare("INSERT INTO order_items (order_id, item_id, quantity, unit_price, subtotal, special_instructions) VALUES (?, ?, ?, ?, ?, ?)");
+		foreach ($input['items'] as $item) {
+			$qty = isset($item['quantity']) ? (float)$item['quantity'] : 0;
+			$price = isset($item['price']) ? (float)$item['price'] : 0;
+			$item_subtotal = $qty * $price;
+			$special_instructions = $item['notes'] ?? '';
+			$stmtItem->execute([
+				$order_id,
+				$item['item_id'],
+				$qty,
+				$price,
+				$item_subtotal,
+				$special_instructions
+			]);
+		}
+		$conn->commit();
+		echo json_encode(['success' => true, 'order_number' => $order_number]);
+	} catch (Exception $e) {
+		$conn->rollBack();
+		echo json_encode(['success' => false, 'message' => 'Lưu đơn hàng thất bại!', 'error' => $e->getMessage()]);
+	}
+	exit;
 }
-
-$db = (new Database())->getConnection();
-$method = $_SERVER['REQUEST_METHOD'];
-
-if ($method === 'GET') {
-    $limit = isset($_GET['limit']) ? max(1, (int) $_GET['limit']) : 20;
-    try {
-        $sql = "SELECT o.order_id, o.order_number, o.table_id, o.order_type, o.subtotal, o.tax, o.discount, o.total_amount,
-                       o.customer_name, o.customer_phone, o.order_status, o.payment_status, o.created_at,
-                       t.table_number
-                FROM orders o
-                LEFT JOIN restaurant_tables t ON o.table_id = t.table_id
-                ORDER BY o.created_at DESC
-                LIMIT :limit";
-        $stmt = $db->prepare($sql);
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $stmt->execute();
-        $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // Fetch items per order
-        $orderIds = array_column($orders, 'order_id');
-        $itemsMap = [];
-        if (!empty($orderIds)) {
-            $in = implode(',', array_fill(0, count($orderIds), '?'));
-            $itemSql = "SELECT oi.order_id, oi.item_id, oi.quantity, oi.unit_price, oi.subtotal, oi.special_instructions,
-                               mi.item_name
-                        FROM order_items oi
-                        JOIN menu_items mi ON oi.item_id = mi.item_id
-                        WHERE oi.order_id IN ($in)";
-            $itemStmt = $db->prepare($itemSql);
-            $itemStmt->execute($orderIds);
-            while ($row = $itemStmt->fetch(PDO::FETCH_ASSOC)) {
-                $itemsMap[$row['order_id']][] = $row;
-            }
-        }
-
-        foreach ($orders as &$order) {
-            $order['items'] = $itemsMap[$order['order_id']] ?? [];
-        }
-
-        echo json_encode(['success' => true, 'data' => $orders]);
-    } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Server error']);
-    }
-    exit();
-}
-
-if ($method === 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
-    if (!is_array($input)) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Invalid JSON body']);
-        exit();
-    }
-
-    $items = $input['items'] ?? [];
-    if (empty($items)) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Order items required']);
-        exit();
-    }
-
-    // Fetch item prices to prevent client tampering
-    $itemIds = array_map('intval', array_column($items, 'item_id'));
-    $in = implode(',', array_fill(0, count($itemIds), '?'));
-    $menuSql = "SELECT item_id, price FROM menu_items WHERE item_id IN ($in) AND is_available = 1";
-    $menuStmt = $db->prepare($menuSql);
-    $menuStmt->execute($itemIds);
-    $priceMap = [];
-    foreach ($menuStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-        $priceMap[$row['item_id']] = (float) $row['price'];
-    }
-
-    $subtotal = 0;
-    foreach ($items as &$item) {
-        $id = (int) $item['item_id'];
-        $qty = max(1, (int) ($item['quantity'] ?? 1));
-        $price = $priceMap[$id] ?? null;
-        if ($price === null) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Invalid or unavailable menu item: ' . $id]);
-            exit();
-        }
-        $item['quantity'] = $qty;
-        $item['unit_price'] = $price;
-        $item['line_total'] = $qty * $price;
-        $subtotal += $item['line_total'];
-    }
-
-    $tax = isset($input['tax']) ? (float) $input['tax'] : round($subtotal * (TAX_RATE / 100), 2);
-    $discount = isset($input['discount']) ? (float) $input['discount'] : 0;
-    $total = $subtotal + $tax - $discount;
-
-    $orderNumber = generateOrderNumber();
-    $tableId = isset($input['table_id']) ? (int) $input['table_id'] : null;
-    $orderType = $input['order_type'] ?? 'dine_in';
-    $customerName = $input['customer_name'] ?? null;
-    $customerPhone = $input['customer_phone'] ?? null;
-    $notes = $input['notes'] ?? null;
-    $paymentMethod = $input['payment_method'] ?? null;
-
-    try {
-        $db->beginTransaction();
-
-        $orderSql = "INSERT INTO orders (
-            order_number, table_id, order_type, waiter_id,
-            subtotal, tax, discount, total_amount,
-            customer_name, customer_phone, notes,
-            order_status, payment_status
-        ) VALUES (
-            :order_number, :table_id, :order_type, :waiter_id,
-            :subtotal, :tax, :discount, :total_amount,
-            :customer_name, :customer_phone, :notes,
-            :order_status, :payment_status
-        )";
-
-        $orderStmt = $db->prepare($orderSql);
-        $orderStatus = (!empty($input['send_to_kitchen'])) ? 'preparing' : 'pending';
-        $paymentStatus = $paymentMethod ? 'paid' : 'unpaid';
-
-        $orderStmt->bindValue(':order_number', $orderNumber);
-        $orderStmt->bindValue(':table_id', $tableId);
-        $orderStmt->bindValue(':order_type', $orderType);
-        $orderStmt->bindValue(':waiter_id', $_SESSION['user_id']);
-        $orderStmt->bindValue(':subtotal', $subtotal);
-        $orderStmt->bindValue(':tax', $tax);
-        $orderStmt->bindValue(':discount', $discount);
-        $orderStmt->bindValue(':total_amount', $total);
-        $orderStmt->bindValue(':customer_name', $customerName);
-        $orderStmt->bindValue(':customer_phone', $customerPhone);
-        $orderStmt->bindValue(':notes', $notes);
-        $orderStmt->bindValue(':order_status', $orderStatus);
-        $orderStmt->bindValue(':payment_status', $paymentStatus);
-        $orderStmt->execute();
-
-        $orderId = (int) $db->lastInsertId();
-
-        $itemSql = "INSERT INTO order_items (order_id, item_id, quantity, unit_price, subtotal, special_instructions)
-                    VALUES (:order_id, :item_id, :quantity, :unit_price, :subtotal, :special_instructions)";
-        $itemStmt = $db->prepare($itemSql);
-        foreach ($items as $item) {
-            $itemStmt->execute([
-                ':order_id' => $orderId,
-                ':item_id' => $item['item_id'],
-                ':quantity' => $item['quantity'],
-                ':unit_price' => $item['unit_price'],
-                ':subtotal' => $item['line_total'],
-                ':special_instructions' => $item['notes'] ?? null,
-            ]);
-            updateIngredientStock($db, $item['item_id'], $item['quantity']);
-        }
-
-        if ($paymentStatus === 'paid') {
-            $paySql = "INSERT INTO payments (order_id, amount, payment_method, cashier_id)
-                       VALUES (:order_id, :amount, :payment_method, :cashier_id)";
-            $payStmt = $db->prepare($paySql);
-            $payStmt->execute([
-                ':order_id' => $orderId,
-                ':amount' => $total,
-                ':payment_method' => $paymentMethod,
-                ':cashier_id' => $_SESSION['user_id']
-            ]);
-        }
-
-        if ($tableId && $orderType === 'dine_in') {
-            $tableStmt = $db->prepare("UPDATE restaurant_tables SET status = 'occupied' WHERE table_id = :table_id");
-            $tableStmt->execute([':table_id' => $tableId]);
-        }
-
-        $db->commit();
-
-        echo json_encode([
-            'success' => true,
-            'message' => 'Order created',
-            'order_id' => $orderId,
-            'order_number' => $orderNumber
-        ]);
-    } catch (Exception $e) {
-        $db->rollBack();
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Failed to create order']);
-    }
-    exit();
-}
-
-http_response_code(405);
-echo json_encode(['success' => false, 'message' => 'Method not allowed']);
-
-// Reduce ingredient stock based on recipe
-function updateIngredientStock(PDO $db, int $itemId, int $quantity): void
-{
-    $sql = "SELECT r.ingredient_id, r.quantity, i.current_stock
-            FROM recipes r
-            JOIN ingredients i ON r.ingredient_id = i.ingredient_id
-            WHERE r.item_id = :item_id";
-    $stmt = $db->prepare($sql);
-    $stmt->execute([':item_id' => $itemId]);
-    $recipes = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    if (empty($recipes)) {
-        return;
-    }
-
-    $updateSql = "UPDATE ingredients SET current_stock = :new_stock WHERE ingredient_id = :ingredient_id";
-    $logSql = "INSERT INTO inventory_transactions (ingredient_id, transaction_type, quantity, reference_type, reference_id, performed_by)
-               VALUES (:ingredient_id, 'out', :quantity, 'order', :order_id, :user_id)";
-
-    foreach ($recipes as $recipe) {
-        $usedQty = (float) $recipe['quantity'] * $quantity;
-        $newStock = (float) $recipe['current_stock'] - $usedQty;
-
-        $updateStmt = $db->prepare($updateSql);
-        $updateStmt->execute([
-            ':new_stock' => $newStock,
-            ':ingredient_id' => $recipe['ingredient_id']
-        ]);
-
-        $logStmt = $db->prepare($logSql);
-        $logStmt->execute([
-            ':ingredient_id' => $recipe['ingredient_id'],
-            ':quantity' => $usedQty,
-            ':order_id' => $itemId,
-            ':user_id' => $_SESSION['user_id'] ?? null
-        ]);
-    }
-}
+// GET: Lấy danh sách đơn hàng
+$stmt = $conn->prepare("SELECT order_id, order_number, created_at, total_amount, order_status FROM orders");
+$stmt->execute();
+$orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+echo json_encode(["success"=>true, "data"=>$orders]);
+?>

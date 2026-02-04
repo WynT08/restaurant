@@ -1,4 +1,4 @@
-<?php
+$<?php
 $current_role = $_SESSION['user_role'] ?? '';
 $isChef = $current_role === 'chef';
 ?>
@@ -104,7 +104,14 @@ $isChef = $current_role === 'chef';
         
         <?php if (hasPermission('admin')): ?>
         <li class="menu-header">Hệ thống</li>
-        
+
+        <li class="<?php echo strpos($_SERVER['REQUEST_URI'], 'contact') !== false ? 'active' : ''; ?>">
+            <a href="<?php echo SITE_URL; ?>/modules/contact/list.php">
+                <i class="fas fa-envelope"></i>
+                <span>Liên hệ khách hàng</span>
+            </a>
+        </li>
+
         <li class="<?php echo strpos($_SERVER['REQUEST_URI'], 'users') !== false ? 'active' : ''; ?>">
             <a href="<?php echo SITE_URL; ?>/modules/users/manage_staff.php">
                 <i class="fas fa-users"></i>

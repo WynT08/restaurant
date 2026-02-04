@@ -201,7 +201,7 @@ try {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: #667eea;
+    background: #0c5b2f;
     border: 2px solid white;
 }
 

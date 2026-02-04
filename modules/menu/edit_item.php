@@ -1,6 +1,15 @@
 <?php
 $page_title = 'Sửa món ăn';
-include '../../includes/header.php';
+require_once '../../config/config.php';
+require_once '../../config/database.php';
+requireLogin();
+
+$database = new Database();
+$db = $database->getConnection();
+$current_user = getCurrentUser($db);
+$current_page = basename($_SERVER['PHP_SELF'], '.php');
+$current_role = $current_user['role'] ?? ($current_user['user_role'] ?? '');
+
 requirePermission('manager');
 
 $item_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
@@ -9,9 +18,6 @@ if ($item_id <= 0) {
     header('Location: items.php');
     exit();
 }
-
-// Lấy danh mục
-$categories = $db->query("SELECT * FROM categories WHERE status = 'active' ORDER BY display_order")->fetchAll(PDO::FETCH_ASSOC);
 
 // Lấy thông tin món
 $stmt = $db->prepare("SELECT * FROM menu_items WHERE item_id = :id LIMIT 1");
@@ -24,7 +30,7 @@ if (!$item) {
     exit();
 }
 
-// Xử lý cập nhật
+// Handle update POST before output
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $image_name = $item['image'];
@@ -77,6 +83,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         setAlert('Có lỗi xảy ra: ' . $e->getMessage(), 'danger');
     }
 }
+
+// Lấy danh mục
+$categories = $db->query("SELECT * FROM categories ORDER BY display_order")->fetchAll(PDO::FETCH_ASSOC);
+
+// Now include header after all redirects and POST handling
+include '../../includes/header.php';
 ?>
 
 <div class="container-fluid">
