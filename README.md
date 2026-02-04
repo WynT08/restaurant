@@ -20,8 +20,8 @@ Quản lý nhà hàng với POS, đặt bàn, đơn hàng, kho nguyên liệu v�
 6. Truy cập trang chủ: `http://localhost/restaurant-management/`.
 
 ### Tài khoản mẫu
-- Admin: admin@example.com / password123
-- Nhân viên: staff@example.com / password123
+- Admin: admin@example.com / password
+- Nhân viên: staff@example.com / password
 
 ## Cấu trúc chính
 - `config/` cấu hình hệ thống và kết nối DB.
